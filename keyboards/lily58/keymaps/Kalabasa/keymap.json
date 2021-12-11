@@ -50,7 +50,7 @@
       "KC_D",
       "KC_V",
       "KC_LALT",
-      "KC_BSPC",
+      "KC_RALT",
       "KC_K",
       "KC_H",
       "KC_COMM",
@@ -63,7 +63,7 @@
       "KC_SPC",
       "KC_ENT",
       "MO(2)",
-      "KC_RSFT",
+      "KC_BSPC",
       "KC_RGUI"
     ],
     [
