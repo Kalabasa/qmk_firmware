@@ -1,10 +1,5 @@
 #include QMK_KEYBOARD_H
 
-// TODO
-// * Swap Brightness keys
-// * Easier Ctrl+Tab
-// * Backspace in Layer 1
-
 //SSD1306 OLED update loop, make sure to enable OLED_ENABLE=yes in rules.mk
 #ifdef OLED_ENABLE
 
