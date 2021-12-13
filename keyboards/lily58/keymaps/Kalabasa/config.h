@@ -26,8 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MASTER_RIGHT
 // #define EE_HANDS
 
-#define TAPPING_FORCE_HOLD
 #define TAPPING_TERM 150
+#define TAPPING_TOGGLE 3
 
 #define OLED_TIMEOUT 10000
 #define OLED_FADE_OUT
