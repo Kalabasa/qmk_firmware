@@ -348,7 +348,11 @@ void oled_render(void) {
 }
 
 void oled_set_cursor(uint8_t col, uint8_t line) {
-    uint16_t index = line * oled_rotation_width + col * OLED_FONT_WIDTH;
+    oled_set_cursor_px(col * OLED_FONT_WIDTH, line);
+}
+
+void oled_set_cursor_px(uint8_t px_col, uint8_t line) {
+    uint16_t index = line * oled_rotation_width + px_col;
 
     // Out of bounds?
     if (index >= OLED_MATRIX_SIZE) {

@@ -201,6 +201,7 @@ void oled_render(void);
 // Moves cursor to character position indicated by column and line, wraps if out of bounds
 // Max column denoted by 'oled_max_chars()' and max lines by 'oled_max_lines()' functions
 void oled_set_cursor(uint8_t col, uint8_t line);
+void oled_set_cursor_px(uint8_t px_col, uint8_t line);
 
 // Advances the cursor to the next page, writing ' ' if true
 // Wraps to the begining when out of bounds
