@@ -20,19 +20,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-/* Select hand configuration */
-
 // #define MASTER_LEFT
 #define MASTER_RIGHT
-// #define EE_HANDS
+#define SPLIT_LAYER_STATE_ENABLE
+#define SPLIT_LED_STATE_ENABLE
+#define SPLIT_MODS_ENABLE
 
-#define TAPPING_TERM 150
-#define TAPPING_TOGGLE 3
+#define TAPPING_TERM 175
+#define TAPPING_TOGGLE 2
 
 #define OLED_TIMEOUT 10000
 #define OLED_FADE_OUT
 #define OLED_FADE_OUT_INTERVAL 15
 #define OLED_BRIGHTNESS 64
+#define OLED_COLUMN_OFFSET 2
 
 #undef OLED_FONT_H
 #define OLED_FONT_H "keymaps/Kalabasa/font.c"
