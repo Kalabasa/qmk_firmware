@@ -29,6 +29,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 
 typedef enum {
   HIDE = 0,
+  SHOW_BOTH,
   SHOW_LEFT,
   SHOW_RIGHT,
 } layer_ind_state_t;
@@ -64,6 +65,13 @@ void update_layer_ind(unsigned int layer) {
       layer_ind[11] = 0xA4 + offset;
       layer_ind[12] = 0xA5 + offset;
       break;
+    case 9:
+      layer_ind_state = SHOW_BOTH;
+      layer_ind[6] = 0x96;
+      layer_ind[7] = 0x97;
+      layer_ind[11] = 0xB4;
+      layer_ind[12] = 0xB5;
+      break;
     default:
       layer_ind_state = HIDE;
   }
@@ -73,11 +81,10 @@ void update_mode_ind(unsigned int layer) {
   switch (layer) {
     case 8:
       mode_ind_state = true;
-      int offset = 2 * (layer - 8);
-      mode_ind[6] = 0x94 + offset;
-      mode_ind[7] = 0x95 + offset;
-      mode_ind[11] = 0xB4 + offset;
-      mode_ind[12] = 0xB5 + offset;
+      mode_ind[6] = 0x94;
+      mode_ind[7] = 0x95;
+      mode_ind[11] = 0xB4;
+      mode_ind[12] = 0xB5;
       break;
     default:
       mode_ind_state = false;
@@ -96,20 +103,48 @@ void render_indicator(char* data) {
   oled_write_ln(data + 15, false);
 }
 
+void render_modifiers(unsigned int layer) {
+  if (host_keyboard_leds() & (1<<USB_LED_CAPS_LOCK)) {
+    oled_set_cursor_px(0, 0);
+    oled_write_char(0xc4, false);
+  }
+
+  unsigned int mods = get_mods();
+  if (mods & MOD_MASK_GUI) {
+    oled_set_cursor_px(4, 15);
+    oled_write_char(0xc5, false);
+  }
+  if (mods & MOD_MASK_ALT) {
+    oled_set_cursor_px(11, 15);
+    oled_write_char(0xc6, false);
+  }
+  if (mods & MOD_MASK_CTRL) {
+    oled_set_cursor_px(17, 15);
+    oled_write_char(0xc7, false);
+  }
+  if (layer != 1 && mods & MOD_MASK_SHIFT) {
+    oled_set_cursor_px(24, 15);
+    oled_write_char(0xc8, false);
+  }
+}
+
 void oled_task_user(void) {
+  oled_clear();
+
+  unsigned int layer = get_highest_layer(layer_state);
+
   if (!is_keyboard_master()) {
-    unsigned int layer = get_highest_layer(layer_state);
     update_layer_ind(layer);
     update_mode_ind(layer);
   }
   
   bool left = is_keyboard_left();
   bool show_left = layer_ind_state == SHOW_LEFT;
-  if (layer_ind_state && left == show_left) {
+  if (layer_ind_state && (layer_ind_state == SHOW_BOTH || left == show_left)) {
     render_indicator(layer_ind);
   } else if (mode_ind_state) {
     render_indicator(mode_ind);
-  } else {
-    oled_clear();
   }
+
+  render_modifiers(layer);
 }
