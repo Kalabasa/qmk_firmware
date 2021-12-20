@@ -5,9 +5,9 @@ const key_override_t comma_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_COMMA
 const key_override_t bslash_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_BSLASH, KC_BSLASH);
 
 const key_override_t **key_overrides = (const key_override_t *[]){
-    &comma_key_override,
-    &bslash_key_override,
-    NULL,
+  &comma_key_override,
+  &bslash_key_override,
+  NULL,
 };
 
 void update_layer_ind(unsigned int layer);
