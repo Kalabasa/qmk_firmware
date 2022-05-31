@@ -3,7 +3,7 @@
 #   the appropriate keymap folder that will get included automatically
 #
 BOOTMAGIC_ENABLE = no       # Enable Bootmagic Lite
-MOUSEKEY_ENABLE = yes        # Mouse keys
+MOUSEKEY_ENABLE = no        # Mouse keys
 EXTRAKEY_ENABLE = yes        # Audio control and System control
 SWAP_HANDS_ENABLE = no      # Enable one-hand typing
 OLED_ENABLE = yes     # OLED display
