@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define TAPPING_TERM 175
 #define TAPPING_TOGGLE 2
-#define TAPPING_FORCE_HOLD
+#define TAPPING_FORCE_HOLD_PER_KEY
 
 #define OLED_TIMEOUT 10000
 #define OLED_FADE_OUT

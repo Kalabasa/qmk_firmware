@@ -27,6 +27,16 @@ layer_state_t layer_state_set_user(layer_state_t state) {
   return state;
 }
 
+bool get_tapping_force_hold(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) {
+    case LT(1, KC_SPC):
+      return true;
+    default:
+      return false;
+  }
+}
+
+
 typedef enum {
   HIDE = 0,
   SHOW_BOTH,
@@ -137,7 +147,7 @@ void oled_task_user(void) {
     update_layer_ind(layer);
     update_mode_ind(layer);
   }
-  
+
   bool left = is_keyboard_left();
   bool show_left = layer_ind_state == SHOW_LEFT;
   if (layer_ind_state && (layer_ind_state == SHOW_BOTH || left == show_left)) {
