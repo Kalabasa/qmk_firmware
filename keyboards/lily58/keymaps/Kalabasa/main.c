@@ -68,7 +68,7 @@ void update_layer_ind(unsigned int layer) {
     case 4:
     case 5:
     case 6:
-      layer_ind_state = layer <= 3 ? SHOW_LEFT : SHOW_RIGHT;
+      layer_ind_state = layer <= 2 ? SHOW_LEFT : SHOW_RIGHT;
       int offset = 2 * (layer - 1);
       layer_ind[6] = 0x84 + offset;
       layer_ind[7] = 0x85 + offset;
