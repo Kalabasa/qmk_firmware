@@ -138,7 +138,7 @@ void render_modifiers(unsigned int layer) {
   }
 }
 
-void oled_task_user(void) {
+bool oled_task_user(void) {
   oled_clear();
 
   unsigned int layer = get_highest_layer(layer_state);
@@ -157,4 +157,6 @@ void oled_task_user(void) {
   }
 
   render_modifiers(layer);
+
+  return false;
 }
