@@ -20,6 +20,8 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     unregister_code(KC_LSHIFT);
   }
 
+  swap_hands = IS_LAYER_ON_STATE(state, 9);
+
   unsigned int layer = get_highest_layer(state);
   update_layer_ind(layer);
   update_mode_ind(layer);
@@ -79,8 +81,8 @@ void update_layer_ind(unsigned int layer) {
       layer_ind_state = SHOW_BOTH;
       layer_ind[6] = 0x96;
       layer_ind[7] = 0x97;
-      layer_ind[11] = 0xB4;
-      layer_ind[12] = 0xB5;
+      layer_ind[11] = 0xB6;
+      layer_ind[12] = 0xB7;
       break;
     default:
       layer_ind_state = HIDE;
@@ -120,21 +122,26 @@ void render_modifiers(unsigned int layer) {
   }
 
   unsigned int mods = get_mods();
-  if (mods & MOD_MASK_GUI) {
-    oled_set_cursor_px(4, 15);
-    oled_write_char(0xc5, false);
-  }
-  if (mods & MOD_MASK_ALT) {
-    oled_set_cursor_px(11, 15);
-    oled_write_char(0xc6, false);
-  }
+  const int dx = is_keyboard_left() ? -7 : 7;
+  int x = is_keyboard_left() ? (4 - dx*3) : 4;
   if (mods & MOD_MASK_CTRL) {
-    oled_set_cursor_px(17, 15);
+    oled_set_cursor_px(x, 15);
     oled_write_char(0xc7, false);
   }
+  x += dx;
+  if (mods & MOD_MASK_ALT) {
+    oled_set_cursor_px(x, 15);
+    oled_write_char(0xc6, false);
+  }
+  x += dx;
   if (layer != 1 && mods & MOD_MASK_SHIFT) {
-    oled_set_cursor_px(24, 15);
+    oled_set_cursor_px(x, 15);
     oled_write_char(0xc8, false);
+  }
+  x += dx;
+  if (mods & MOD_MASK_GUI) {
+    oled_set_cursor_px(x, 15);
+    oled_write_char(0xc5, false);
   }
 }
 
