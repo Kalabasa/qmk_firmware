@@ -1,4 +1,5 @@
 #include QMK_KEYBOARD_H
+#include "keycodes.h"
 #include "progmem.h"
 
 typedef enum {
@@ -9,19 +10,19 @@ typedef enum {
 
 static os_t os = OS_LINUX;
 
-const key_override_t comma_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_COMMA, KC_COMMA);
-const key_override_t bslash_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_BSLASH, KC_BSLASH);
-
-const key_override_t **key_overrides = (const key_override_t *[]){
-  &comma_key_override,
-  &bslash_key_override,
-  NULL,
-};
-
+uint16_t get_primary_mod(void);
+uint16_t get_desktop_mod(void);
+uint16_t get_word_mod(void);
+void (*get_record_func(keyrecord_t *record))(uint16_t);
 void update_layer_ind(unsigned int layer);
 void update_mode_ind(unsigned int layer);
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  uint16_t primary_mod = get_primary_mod();
+  uint16_t desktop_mod = get_desktop_mod();
+  uint16_t word_mod = get_word_mod();
+  void (*record_func)(uint16_t) = get_record_func(record);
+
   switch (keycode) {
     case LCG_NRM: // Ctrl as primary modifier (Linux/Windows)
       if (record->event.pressed) {
@@ -33,6 +34,30 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         os = OS_MACOS;
       }
       return true;
+    case BRACKET_BACK:
+      record_func(primary_mod | KC_LEFT_BRACKET);
+      return false;
+    case BRACKET_FORWARD:
+      record_func(primary_mod | KC_RIGHT_BRACKET);
+      return false;
+    case DESKTOP_UP:
+      record_func(desktop_mod | KC_UP);
+      return false;
+    case DESKTOP_DOWN:
+      record_func(desktop_mod | KC_DOWN);
+      return false;
+    case DESKTOP_LEFT:
+      record_func(desktop_mod | KC_LEFT);
+      return false;
+    case DESKTOP_RIGHT:
+      record_func(desktop_mod | KC_RIGHT);
+      return false;
+    case WORD_NEXT:
+      record_func(word_mod | KC_RIGHT);
+      return false;
+    case WORD_PREV:
+      record_func(word_mod | KC_LEFT);
+      return false;
     default:
       return true;
   }
@@ -54,12 +79,53 @@ layer_state_t layer_state_set_user(layer_state_t state) {
   return state;
 }
 
+const key_override_t comma_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_COMMA, KC_COMMA);
+const key_override_t bslash_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_BSLASH, KC_BSLASH);
+
+const key_override_t **key_overrides = (const key_override_t *[]){
+  &comma_key_override,
+  &bslash_key_override,
+  NULL,
+};
+
 bool get_tapping_force_hold(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
     case LT(1, KC_SPC):
       return true;
     default:
       return false;
+  }
+}
+
+uint16_t get_primary_mod(void) {
+  switch (os) {
+    case OS_LINUX: return QK_LCTL;
+    case OS_MACOS: return QK_LGUI;
+  }
+  return 0;
+}
+
+uint16_t get_desktop_mod(void) {
+  switch (os) {
+    case OS_LINUX: return QK_LCTL | QK_LGUI;
+    case OS_MACOS: return QK_LCTL;
+  }
+  return 0;
+}
+
+uint16_t get_word_mod(void) {
+  switch (os) {
+    case OS_LINUX: return QK_LCTL;
+    case OS_MACOS: return QK_LALT;
+  }
+  return 0;
+}
+
+void (*get_record_func(keyrecord_t *record))(uint16_t) {
+  if (record->event.pressed) {
+    return &register_code16;
+  } else {
+    return &unregister_code16;
   }
 }
 
