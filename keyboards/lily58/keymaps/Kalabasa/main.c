@@ -1,6 +1,14 @@
 #include QMK_KEYBOARD_H
 #include "progmem.h"
 
+typedef enum {
+  OS_LINUX = 0,
+  OS_MACOS,
+  // OS_WINDOWS,
+} os_t;
+
+static os_t os = OS_LINUX;
+
 const key_override_t comma_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_COMMA, KC_COMMA);
 const key_override_t bslash_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_BSLASH, KC_BSLASH);
 
@@ -12,6 +20,23 @@ const key_override_t **key_overrides = (const key_override_t *[]){
 
 void update_layer_ind(unsigned int layer);
 void update_mode_ind(unsigned int layer);
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) {
+    case LCG_NRM: // Ctrl as primary modifier (Linux/Windows)
+      if (record->event.pressed) {
+        os = OS_LINUX;
+      }
+      return true;
+    case LCG_SWP: // GUI as primary modifier (macOS)
+      if (record->event.pressed) {
+        os = OS_MACOS;
+      }
+      return true;
+    default:
+      return true;
+  }
+}
 
 layer_state_t layer_state_set_user(layer_state_t state) {
   if (IS_LAYER_ON_STATE(state, 1)) {
@@ -38,6 +63,13 @@ bool get_tapping_force_hold(uint16_t keycode, keyrecord_t *record) {
   }
 }
 
+
+
+//=============================================================================
+//
+//  LED Rendering
+//
+//=============================================================================
 
 typedef enum {
   HIDE = 0,
@@ -107,11 +139,19 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
   return OLED_ROTATION_270;
 }
 
+void render_os(void) {
+  oled_set_cursor(2 + os, 0);
+  oled_write_char(0xd4 + os, false);
+}
+
 void render_indicator(char* data) {
-  oled_set_cursor(0, 6);
-  oled_write_ln(data, false);
+  oled_set_cursor(1, 6);
+  oled_write(data, false);
+  oled_set_cursor(1, 7);
   oled_write_ln(data + 5, false);
+  oled_set_cursor(1, 8);
   oled_write_ln(data + 10, false);
+  oled_set_cursor(1, 9);
   oled_write_ln(data + 15, false);
 }
 
@@ -147,6 +187,8 @@ void render_modifiers(unsigned int layer) {
 
 bool oled_task_user(void) {
   oled_clear();
+
+  if (is_keyboard_master()) render_os();
 
   unsigned int layer = get_highest_layer(layer_state);
 
