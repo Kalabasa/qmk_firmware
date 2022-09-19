@@ -134,14 +134,14 @@ void render_modifiers(unsigned int layer) {
     oled_write_char(0xc6, false);
   }
   x += dx;
-  if (layer != 1 && mods & MOD_MASK_SHIFT) {
-    oled_set_cursor_px(x, 15);
-    oled_write_char(0xc8, false);
-  }
-  x += dx;
   if (mods & MOD_MASK_GUI) {
     oled_set_cursor_px(x, 15);
     oled_write_char(0xc5, false);
+  }
+  x += dx;
+  if (layer != 1 && mods & MOD_MASK_SHIFT) {
+    oled_set_cursor_px(x, 15);
+    oled_write_char(0xc8, false);
   }
 }
 
