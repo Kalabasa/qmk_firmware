@@ -2,6 +2,33 @@
 #include "keycodes.h"
 #include "progmem.h"
 
+const uint32_t PROGMEM unicode_map[] = {
+  [EMO_Q] = U'😭',
+  [EMO_W] = U'👋',
+  [EMO_F] = U'🥺',
+  [EMO_P] = U'🎉',
+  [EMO_A] = U'😂',
+  [EMO_R] = U'😃',
+  [EMO_S] = U'🙂',
+  [EMO_T] = U'🤔',
+  [UP_HAND] = U'☝',
+  [DOWN_HAND] = U'👇',
+  [LEFT_HAND] = U'👈',
+  [RIGHT_HAND] = U'👉',
+  [UP] = U'↑',
+  [DOWN] = U'↓',
+  [LEFT] = U'←',
+  [RIGHT] = U'→',
+  [UP_BOX] = U'⬆️',
+  [DOWN_BOX] = U'⬇️',
+  [LEFT_BOX] = U'⬅️',
+  [RIGHT_BOX] = U'➡️',
+  [CROSS] = U'❌',
+  [LIKE] = U'👍',
+  [CHECK] = U'✔',
+  [CHECK_BOX] = U'✅',
+};
+
 typedef enum {
   OS_LINUX = 0,
   OS_MACOS,
@@ -13,50 +40,55 @@ static os_t os = OS_LINUX;
 uint16_t get_primary_mod(void);
 uint16_t get_desktop_mod(void);
 uint16_t get_word_mod(void);
+uint16_t get_emoji_picker_hotkey(void);
 void (*get_record_func(keyrecord_t *record))(uint16_t);
 void update_layer_ind(unsigned int layer);
 void update_mode_ind(unsigned int layer);
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  uint16_t primary_mod = get_primary_mod();
-  uint16_t desktop_mod = get_desktop_mod();
-  uint16_t word_mod = get_word_mod();
   void (*record_func)(uint16_t) = get_record_func(record);
 
   switch (keycode) {
     case LCG_NRM: // Ctrl as primary modifier (Linux/Windows)
       if (record->event.pressed) {
         os = OS_LINUX;
+        set_unicode_input_mode(UC_LNX);
       }
       return true;
     case LCG_SWP: // GUI as primary modifier (macOS)
       if (record->event.pressed) {
         os = OS_MACOS;
+        set_unicode_input_mode(UC_MAC);
       }
       return true;
     case BRACKET_BACK:
-      record_func(primary_mod | KC_LEFT_BRACKET);
+      record_func(get_primary_mod() | KC_LEFT_BRACKET);
       return false;
     case BRACKET_FORWARD:
-      record_func(primary_mod | KC_RIGHT_BRACKET);
+      record_func(get_primary_mod() | KC_RIGHT_BRACKET);
       return false;
     case DESKTOP_UP:
-      record_func(desktop_mod | KC_UP);
+      record_func(get_desktop_mod() | KC_UP);
       return false;
     case DESKTOP_DOWN:
-      record_func(desktop_mod | KC_DOWN);
+      record_func(get_desktop_mod() | KC_DOWN);
       return false;
     case DESKTOP_LEFT:
-      record_func(desktop_mod | KC_LEFT);
+      record_func(get_desktop_mod() | KC_LEFT);
       return false;
     case DESKTOP_RIGHT:
-      record_func(desktop_mod | KC_RIGHT);
+      record_func(get_desktop_mod() | KC_RIGHT);
       return false;
     case WORD_NEXT:
-      record_func(word_mod | KC_RIGHT);
+      record_func(get_word_mod() | KC_RIGHT);
       return false;
     case WORD_PREV:
-      record_func(word_mod | KC_LEFT);
+      record_func(get_word_mod() | KC_LEFT);
+      return false;
+    case EMOJI:
+      if (!record->event.pressed) {
+        tap_code16(get_emoji_picker_hotkey());
+      }
       return false;
     default:
       return true;
@@ -64,13 +96,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-  if (IS_LAYER_ON_STATE(state, 1)) {
+  if (IS_LAYER_ON_STATE(state, 1)) { // Shift layer
     register_code(KC_LSHIFT);
   } else {
     unregister_code(KC_LSHIFT);
   }
 
-  swap_hands = IS_LAYER_ON_STATE(state, 9);
+  swap_hands = IS_LAYER_ON_STATE(state, 9); // Swap QWERTY
 
   unsigned int layer = get_highest_layer(state);
   update_layer_ind(layer);
@@ -117,6 +149,14 @@ uint16_t get_word_mod(void) {
   switch (os) {
     case OS_LINUX: return QK_LCTL;
     case OS_MACOS: return QK_LALT;
+  }
+  return 0;
+}
+
+uint16_t get_emoji_picker_hotkey(void) {
+  switch (os) {
+    case OS_LINUX: return G(KC_SEMICOLON);
+    case OS_MACOS: return C(G(KC_SPACE));
   }
   return 0;
 }
@@ -168,7 +208,7 @@ void update_layer_ind(unsigned int layer) {
     case 4:
     case 5:
     case 6:
-      layer_ind_state = layer <= 2 ? SHOW_LEFT : SHOW_RIGHT;
+      layer_ind_state = layer <= 2 || layer == 6 ? SHOW_LEFT : SHOW_RIGHT;
       int offset = 2 * (layer - 1);
       layer_ind[6] = 0x84 + offset;
       layer_ind[7] = 0x85 + offset;
