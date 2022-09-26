@@ -111,12 +111,13 @@ layer_state_t layer_state_set_user(layer_state_t state) {
   return state;
 }
 
-const key_override_t comma_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_COMMA, KC_COMMA);
-const key_override_t bslash_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_BSLASH, KC_BSLASH);
+// For unshifted keys in layer 1 
+const key_override_t semicolon_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_SEMICOLON, KC_SEMICOLON);
+const key_override_t slash_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_SLASH, KC_SLASH);
 
 const key_override_t **key_overrides = (const key_override_t *[]){
-  &comma_key_override,
-  &bslash_key_override,
+  &semicolon_key_override,
+  &slash_key_override,
   NULL,
 };
 
