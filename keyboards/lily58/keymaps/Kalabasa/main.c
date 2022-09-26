@@ -1,6 +1,7 @@
 #include QMK_KEYBOARD_H
 #include "keycodes.h"
 #include "progmem.h"
+#include "features/custom_shift_keys.h"
 
 const uint32_t PROGMEM unicode_map[] = {
   [EMO_Q] = U'😭',
@@ -19,7 +20,7 @@ const uint32_t PROGMEM unicode_map[] = {
   [DOWN] = U'↓',
   [LEFT] = U'←',
   [RIGHT] = U'→',
-  [UP_BOX] = 0x2b06,
+  [UP_BOX] = 0x2b06, // fixme
   [DOWN_BOX] = 0x2b07,
   [LEFT_BOX] = 0x2b05,
   [RIGHT_BOX] = 0x27a1,
@@ -35,7 +36,19 @@ typedef enum {
   // OS_WINDOWS,
 } os_t;
 
+// For OS-aware shortcuts
 static os_t os = OS_LINUX;
+
+// 0: Neutral, 1: Open bracket held, 2: Open & close brackets held
+static int bracket_state = 0;
+
+// For unshifted keys in layer 1
+const custom_shift_key_t custom_shift_keys[] = {
+  {KC_SEMICOLON, KC_SEMICOLON},
+  {KC_SLASH, KC_SLASH},
+};
+uint8_t NUM_CUSTOM_SHIFT_KEYS =
+    sizeof(custom_shift_keys) / sizeof(custom_shift_key_t);
 
 uint16_t get_primary_mod(void);
 uint16_t get_desktop_mod(void);
@@ -46,6 +59,8 @@ void update_layer_ind(unsigned int layer);
 void update_mode_ind(unsigned int layer);
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  if (!process_custom_shift_keys(keycode, record)) return false;
+
   void (*record_func)(uint16_t) = get_record_func(record);
 
   switch (keycode) {
@@ -61,6 +76,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         set_unicode_input_mode(UC_MAC);
       }
       return true;
+
     case BRACKET_BACK:
       record_func(get_primary_mod() | KC_LEFT_BRACKET);
       return false;
@@ -90,6 +106,40 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         tap_code16(get_emoji_picker_hotkey());
       }
       return false;
+
+    /*
+    Put cursor inside after typing empty pair of brackets
+
+    FSM:
+      (0)  → '('down →→→  (1)  → ')'down →→→  (2)  → ')'up →→→  ((LEFT))
+       ↑                   ↓ '('up             ↓ '('|')'up
+       ↑←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+
+    */
+    case KC_LEFT_PAREN:
+    case KC_LEFT_BRACKET:
+    case KC_LEFT_CURLY_BRACE:
+      if (record->event.pressed) {
+        bracket_state = 1;
+      } else if (!record->event.pressed) {
+        bracket_state = 0;
+      }
+      return true;
+    case KC_RIGHT_PAREN:
+    case KC_RIGHT_BRACKET:
+    case KC_RIGHT_CURLY_BRACE:
+      if (record->event.pressed) {
+        if (bracket_state == 1) bracket_state++;
+      } else if (!record->event.pressed) {
+        if (bracket_state == 2) {
+          bracket_state = 0;
+          unregister_code16(keycode);
+          tap_code(KC_LEFT);
+          return false;
+        }
+      }
+      return true;
+
     default:
       return true;
   }
@@ -110,16 +160,6 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 
   return state;
 }
-
-// For unshifted keys in layer 1 
-const key_override_t semicolon_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_SEMICOLON, KC_SEMICOLON);
-const key_override_t slash_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_SLASH, KC_SLASH);
-
-const key_override_t **key_overrides = (const key_override_t *[]){
-  &semicolon_key_override,
-  &slash_key_override,
-  NULL,
-};
 
 bool get_tapping_force_hold(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
