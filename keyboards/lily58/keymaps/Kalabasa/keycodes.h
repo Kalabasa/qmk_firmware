@@ -7,6 +7,8 @@ enum my_keycodes {
   DESKTOP_RIGHT,
   WORD_NEXT,
   WORD_PREV,
+  WORD_SELECT,
+  WORD_DELETE,
   EMOJI,
 };
 

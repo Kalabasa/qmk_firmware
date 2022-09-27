@@ -77,6 +77,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       return true;
 
+    /*
+    Some shortcuts
+    */
     case BRACKET_BACK:
       record_func(get_primary_mod() | KC_LEFT_BRACKET);
       return false;
@@ -108,17 +111,35 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return false;
 
     /*
-    Put cursor inside after typing empty pair of brackets
+    Word actions
+    */
+    case WORD_SELECT:
+    case WORD_DELETE:
+      if (record->event.pressed) {
+        uint16_t word_mod = get_word_mod();
+        unregister_code(KC_LSHIFT);
+        unregister_code(KC_RSHIFT);
+        tap_code(KC_RIGHT);
+        tap_code16(word_mod | KC_LEFT);
+        tap_code16(word_mod | S(KC_RIGHT));
+        if (keycode == WORD_DELETE) {
+          tap_code(KC_BACKSPACE);
+        }
+      }
+      return false;
 
+    /*
+    Put cursor inside after typing empty pair of brackets
     FSM:
-      (0)  → '('down →→→  (1)  → ')'down →→→  (2)  → ')'up →→→  ((LEFT))
-       ↑                   ↓ '('up             ↓ '('|')'up
-       ↑←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+      (0)  → [ down →→→  (1)  → ] down →→→  (2)  → ] up →→→  ((KC_LEFT))
+       ↑                  ↓ [ up             ↓ [ ] up
+       ↑←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
 
     */
     case KC_LEFT_PAREN:
     case KC_LEFT_BRACKET:
     case KC_LEFT_CURLY_BRACE:
+    case KC_LEFT_ANGLE_BRACKET:
       if (record->event.pressed) {
         bracket_state = 1;
       } else if (!record->event.pressed) {
@@ -128,6 +149,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case KC_RIGHT_PAREN:
     case KC_RIGHT_BRACKET:
     case KC_RIGHT_CURLY_BRACE:
+    case KC_RIGHT_ANGLE_BRACKET:
       if (record->event.pressed) {
         if (bracket_state == 1) bracket_state++;
       } else if (!record->event.pressed) {
