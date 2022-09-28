@@ -119,9 +119,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         uint16_t word_mod = get_word_mod();
         unregister_code(KC_LSHIFT);
         unregister_code(KC_RSHIFT);
-        tap_code(KC_RIGHT);
-        tap_code16(word_mod | KC_LEFT);
-        tap_code16(word_mod | S(KC_RIGHT));
+        tap_code(KC_LEFT);
+        tap_code16(word_mod | KC_RIGHT);
+        tap_code16(word_mod | S(KC_LEFT));
         if (keycode == WORD_DELETE) {
           tap_code(KC_BACKSPACE);
         }
