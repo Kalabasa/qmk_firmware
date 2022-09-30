@@ -2,6 +2,7 @@
 #include "keycodes.h"
 #include "progmem.h"
 #include "features/custom_shift_keys.h"
+#include "features/layer_lock.h"
 
 extern keymap_config_t keymap_config;
 
@@ -52,6 +53,8 @@ const custom_shift_key_t custom_shift_keys[] = {
 uint8_t NUM_CUSTOM_SHIFT_KEYS =
     sizeof(custom_shift_keys) / sizeof(custom_shift_key_t);
 
+static int led_timer = 0;
+
 uint16_t get_primary_mod(void);
 uint16_t get_desktop_mod(void);
 uint16_t get_word_mod(void);
@@ -65,6 +68,7 @@ void keyboard_post_init_user(void) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  if (!process_layer_lock(keycode, record, LAYER_LOCK)) return false;
   if (!process_custom_shift_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);
@@ -277,7 +281,7 @@ void update_layer_ind(unsigned int layer) {
     case 4:
     case 5:
     case 6:
-      layer_ind_state = layer <= 2 || layer == 6 ? SHOW_LEFT : SHOW_RIGHT;
+      layer_ind_state = layer <= 2 ? SHOW_LEFT : SHOW_RIGHT;
       int offset = 2 * (layer - 1);
       layer_ind[6] = 0x84 + offset;
       layer_ind[7] = 0x85 + offset;
@@ -375,7 +379,10 @@ bool oled_task_user(void) {
   bool left = is_keyboard_left();
   bool show_left = layer_ind_state == SHOW_LEFT;
   if (layer_ind_state && (layer_ind_state == SHOW_BOTH || left == show_left)) {
-    render_indicator(layer_ind);
+    bool locked = is_layer_locked(layer) || layer == /* Emoji OSL */ 6;
+    if (!locked || (led_timer++ % 24) < 16) {
+      render_indicator(layer_ind);
+    }
   } else if (mode_ind_state) {
     render_indicator(mode_ind);
   }

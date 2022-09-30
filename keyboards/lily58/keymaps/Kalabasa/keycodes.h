@@ -10,6 +10,7 @@ enum my_keycodes {
   WORD_SELECT,
   WORD_DELETE,
   EMOJI,
+  LAYER_LOCK,
 };
 
 enum unicode_names {
