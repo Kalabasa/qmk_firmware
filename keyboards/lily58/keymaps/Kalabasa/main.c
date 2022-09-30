@@ -3,6 +3,8 @@
 #include "progmem.h"
 #include "features/custom_shift_keys.h"
 
+extern keymap_config_t keymap_config;
+
 const uint32_t PROGMEM unicode_map[] = {
   [EMO_Q] = U'😭',
   [EMO_W] = U'👋',
@@ -57,6 +59,10 @@ uint16_t get_emoji_picker_hotkey(void);
 void (*get_record_func(keyrecord_t *record))(uint16_t);
 void update_layer_ind(unsigned int layer);
 void update_mode_ind(unsigned int layer);
+
+void keyboard_post_init_user(void) {
+  os = keymap_config.swap_lctl_lgui ? OS_MACOS : OS_LINUX;
+}
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (!process_custom_shift_keys(keycode, record)) return false;
