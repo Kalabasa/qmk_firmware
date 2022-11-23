@@ -48,7 +48,7 @@ static int bracket_state = 0;
 // For unshifted keys in layer 1
 const custom_shift_key_t custom_shift_keys[] = {
   {KC_SEMICOLON, KC_SEMICOLON},
-  {KC_SLASH, KC_SLASH},
+  {KC_MINUS, KC_MINUS},
 };
 uint8_t NUM_CUSTOM_SHIFT_KEYS =
     sizeof(custom_shift_keys) / sizeof(custom_shift_key_t);
@@ -140,11 +140,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     /*
     Put cursor inside after typing empty pair of brackets
-    FSM:
-      (0)  → [ down →→→  (1)  → ] down →→→  (2)  → ] up →→→  ((KC_LEFT))
-       ↑                  ↓ [ up             ↓ [ ] up
-       ↑←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
-
+    bracket_state machine:
+      (0) -- '[' down --> (1) -- ']' down --> (2) -- ']' up --> ((KC_LEFT))
+       ^                   |                   |
+       |                   | '[' up            | '[' or ']' up
+       '---------------------------------------'
     */
     case KC_LEFT_PAREN:
     case KC_LEFT_BRACKET:
