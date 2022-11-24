@@ -48,7 +48,8 @@ static int bracket_state = 0;
 // For unshifted keys in layer 1
 const custom_shift_key_t custom_shift_keys[] = {
   {KC_SEMICOLON, KC_SEMICOLON},
-  {KC_SLASH, KC_SLASH},
+  {KC_GRAVE, KC_GRAVE},
+  {KC_BACKSLASH, KC_BACKSLASH},
 };
 uint8_t NUM_CUSTOM_SHIFT_KEYS =
     sizeof(custom_shift_keys) / sizeof(custom_shift_key_t);
