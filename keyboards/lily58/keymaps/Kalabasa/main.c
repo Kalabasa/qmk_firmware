@@ -3,6 +3,7 @@
 #include "progmem.h"
 #include "features/custom_shift_keys.h"
 #include "features/layer_lock.h"
+#include "features/bitwise_f.h"
 
 extern keymap_config_t keymap_config;
 
@@ -51,8 +52,12 @@ const custom_shift_key_t custom_shift_keys[] = {
   {KC_GRAVE, KC_GRAVE},
   {KC_BACKSLASH, KC_BACKSLASH},
 };
-uint8_t NUM_CUSTOM_SHIFT_KEYS =
-    sizeof(custom_shift_keys) / sizeof(custom_shift_key_t);
+uint8_t NUM_CUSTOM_SHIFT_KEYS = sizeof(custom_shift_keys) / sizeof(custom_shift_key_t);
+
+// Bitwise FXX input keys
+const uint16_t bitwise_f_keys[] = { F_B1, F_B2, F_B3, F_B4 };
+uint8_t NUM_BITWISE_F_KEYS = sizeof(bitwise_f_keys) / sizeof(uint16_t);
+
 
 static int led_timer = 0;
 
@@ -71,6 +76,7 @@ void keyboard_post_init_user(void) {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (!process_layer_lock(keycode, record, LAYER_LOCK)) return false;
   if (!process_custom_shift_keys(keycode, record)) return false;
+  if (!process_bitwise_f(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);
 

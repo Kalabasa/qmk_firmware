@@ -11,6 +11,10 @@ enum my_keycodes {
   WORD_DELETE,
   EMOJI,
   LAYER_LOCK,
+  F_B1,
+  F_B2,
+  F_B3,
+  F_B4,
 };
 
 enum unicode_names {
