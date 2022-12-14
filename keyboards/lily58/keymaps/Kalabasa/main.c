@@ -200,6 +200,15 @@ layer_state_t layer_state_set_user(layer_state_t state) {
   return state;
 }
 
+uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) {
+    case LT(1, KC_SPC):
+      return TAPPING_TERM * 2 / 3;
+    default:
+      return TAPPING_TERM;
+  }
+}
+
 bool get_tapping_force_hold(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
     case LT(1, KC_SPC):
