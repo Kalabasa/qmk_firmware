@@ -42,4 +42,8 @@ enum unicode_names {
   LIKE,
   CHECK,
   CHECK_BOX,
+  LS_QUOTE,
+  RS_QUOTE,
+  LD_QUOTE,
+  RD_QUOTE,
 };

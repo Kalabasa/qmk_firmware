@@ -32,6 +32,10 @@ const uint32_t PROGMEM unicode_map[] = {
   [LIKE] = U'👍',
   [CHECK] = U'✔',
   [CHECK_BOX] = U'✅',
+  [LS_QUOTE] = U'‘',
+  [RS_QUOTE] = U'’',
+  [LD_QUOTE] = U'“',
+  [RD_QUOTE] = U'”',
 };
 
 typedef enum {
