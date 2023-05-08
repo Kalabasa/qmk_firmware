@@ -5,6 +5,9 @@
 #include "features/layer_lock.h"
 #include "features/bitwise_f.h"
 
+#define LAYER_EMOJI 6
+#define LAYER_QWERTY 8
+
 extern keymap_config_t keymap_config;
 
 const uint32_t PROGMEM unicode_map[] = {
@@ -205,17 +208,17 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       if (!record->event.pressed) {
         if (game_chat_state == 1) {
           game_chat_state++;
-          layer_move(0); // Normal
+          layer_move(0);
         } else if (game_chat_state == 2) {
           game_chat_state--;
-          layer_move(8); // QWERTY
+          layer_move(LAYER_QWERTY);
         }
       }
       return true;
     case KC_ESCAPE:
       if (!record->event.pressed && game_chat_state == 2) {
         game_chat_state--;
-        layer_move(8); // QWERTY
+        layer_move(LAYER_QWERTY);
       }
       return true;
 
@@ -231,7 +234,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     unregister_code(KC_LSHIFT);
   }
 
-  swap_hands = IS_LAYER_ON_STATE(state, 9); // Swap QWERTY
+  // swap_hands = IS_LAYER_ON_STATE(state, 9); // Swap QWERTY
 
   unsigned int layer = get_highest_layer(state);
   update_layer_ind(layer);
@@ -344,13 +347,6 @@ void update_layer_ind(unsigned int layer) {
       layer_ind[11] = 0xA4 + offset;
       layer_ind[12] = 0xA5 + offset;
       break;
-    case 9:
-      layer_ind_state = SHOW_BOTH;
-      layer_ind[6] = 0x96;
-      layer_ind[7] = 0x97;
-      layer_ind[11] = 0xB6;
-      layer_ind[12] = 0xB7;
-      break;
     default:
       layer_ind_state = HIDE;
   }
@@ -358,7 +354,7 @@ void update_layer_ind(unsigned int layer) {
 
 void update_mode_ind(unsigned int layer) {
   switch (layer) {
-    case 8:
+    case LAYER_QWERTY:
       mode_ind_state = true;
       mode_ind[6] = 0x94;
       mode_ind[7] = 0x95;
@@ -427,6 +423,11 @@ bool oled_task_user(void) {
 
   unsigned int layer = get_highest_layer(layer_state);
 
+  // Blink QWERTY indicator when game chat active
+  if (game_chat_state == 2 && (led_timer++ % 16) < 4) {
+    layer = LAYER_QWERTY;
+  }
+
   if (!is_keyboard_master()) {
     update_layer_ind(layer);
     update_mode_ind(layer);
@@ -435,8 +436,8 @@ bool oled_task_user(void) {
   bool left = is_keyboard_left();
   bool show_left = layer_ind_state == SHOW_LEFT;
   if (layer_ind_state && (layer_ind_state == SHOW_BOTH || left == show_left)) {
-    bool locked = is_layer_locked(layer) || layer == /* Emoji OSL */ 6;
-    if (!locked || (led_timer++ % 24) < 16) {
+    bool blink = is_layer_locked(layer) || layer == LAYER_EMOJI;
+    if (!blink || (led_timer++ % 24) < 16) {
       render_indicator(layer_ind);
     }
   } else if (mode_ind_state) {
