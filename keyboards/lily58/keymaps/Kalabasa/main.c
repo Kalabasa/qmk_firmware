@@ -5,6 +5,8 @@
 #include "features/layer_lock.h"
 #include "features/bitwise_f.h"
 
+#define LAYER_BASE 0
+#define LAYER_SHIFT 1
 #define LAYER_EMOJI 6
 #define LAYER_QWERTY 8
 
@@ -208,16 +210,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       if (!record->event.pressed) {
         if (game_chat_state == 1) {
           game_chat_state++;
-          layer_move(0);
+          layer_move(LAYER_BASE);
         } else if (game_chat_state == 2) {
-          game_chat_state--;
+          game_chat_state = 0;
           layer_move(LAYER_QWERTY);
         }
       }
       return true;
     case KC_ESCAPE:
       if (!record->event.pressed && game_chat_state == 2) {
-        game_chat_state--;
+        game_chat_state = 0;
         layer_move(LAYER_QWERTY);
       }
       return true;
@@ -228,7 +230,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-  if (IS_LAYER_ON_STATE(state, 1)) { // Shift layer
+  if (IS_LAYER_ON_STATE(state, LAYER_SHIFT)) {
     register_code(KC_LSHIFT);
   } else {
     unregister_code(KC_LSHIFT);
@@ -423,14 +425,18 @@ bool oled_task_user(void) {
 
   unsigned int layer = get_highest_layer(layer_state);
 
-  // Blink QWERTY indicator when game chat active
-  if (game_chat_state == 2 && (led_timer++ % 16) < 4) {
-    layer = LAYER_QWERTY;
-  }
-
   if (!is_keyboard_master()) {
     update_layer_ind(layer);
     update_mode_ind(layer);
+  } else {
+    // Blink QWERTY indicator when game chat active
+    if (game_chat_state == 2) {
+      update_mode_ind(
+        (led_timer++ % 16) < 4
+          ? LAYER_QWERTY
+          : LAYER_BASE
+      );
+    }
   }
 
   bool left = is_keyboard_left();
