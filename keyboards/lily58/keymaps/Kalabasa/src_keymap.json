@@ -470,7 +470,7 @@
       "KC_C",
       "KC_V",
       "KC_B",
-      "OSL(9)",
+      "MO(9)",
       "TG(8)",
       "KC_N",
       "KC_M",
@@ -483,9 +483,9 @@
       "KC_LCTL",
       "KC_SPC",
       "KC_SPC",
-      "KC_RCTL",
-      "KC_RALT",
-      "KC_RGUI"
+      "KC_RGUI",
+      "KC_NO",
+      "ANY(GAME_CHAT)"
     ],
     [
       "KC_TRNS",

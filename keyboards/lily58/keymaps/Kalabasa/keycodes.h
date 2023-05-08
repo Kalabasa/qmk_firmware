@@ -15,6 +15,7 @@ enum my_keycodes {
   F_B2,
   F_B3,
   F_B4,
+  GAME_CHAT,
 };
 
 enum unicode_names {
