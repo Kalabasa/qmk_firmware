@@ -166,7 +166,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case KC_LEFT_ANGLE_BRACKET:
       if (record->event.pressed) {
         bracket_state = 1;
-      } else if (!record->event.pressed) {
+      } else {
         bracket_state = 0;
       }
       return true;
@@ -176,7 +176,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case KC_RIGHT_ANGLE_BRACKET:
       if (record->event.pressed) {
         if (bracket_state == 1) bracket_state++;
-      } else if (!record->event.pressed) {
+      } else {
         if (bracket_state == 2) {
           bracket_state = 0;
           unregister_code16(keycode);
