@@ -1,6 +1,6 @@
 #include "bitwise_f.h"
 
-static uint8_t pressed_keys = 0;
+static int8_t pressed_keys = 0;
 static uint8_t accumulator = 0;
 
 uint8_t F_KEYS[] = {
