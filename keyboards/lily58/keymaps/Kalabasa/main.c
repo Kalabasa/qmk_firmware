@@ -158,6 +158,26 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return false;
 
     /*
+    Line actions
+    */
+    case KC_HOME:
+      if (os == OS_MACOS) {
+        // Command + Left moves cursor to beginning of line
+        record_func(QK_LGUI | KC_LEFT);
+        return false;
+      } else {
+        return true;
+      }
+    case KC_END:
+      if (os == OS_MACOS) {
+        // Command + Right moves cursor to end of line
+        record_func(QK_LGUI | KC_RIGHT);
+        return false;
+      } else {
+        return true;
+      }
+
+    /*
     Put cursor inside after typing empty pair of brackets
     bracket_state machine:
       (0) -- '[' down --> (1) -- ']' down --> (2) -- ']' up --> ((KC_LEFT))
