@@ -236,7 +236,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     unregister_code(KC_LSHIFT);
   }
 
-  // swap_hands = IS_LAYER_ON_STATE(state, 9); // Swap QWERTY
+  swap_hands = IS_LAYER_ON_STATE(state, 9); // Swap QWERTY
 
   unsigned int layer = get_highest_layer(state);
   update_layer_ind(layer);
