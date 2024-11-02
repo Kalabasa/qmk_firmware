@@ -30,6 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define TAPPING_TERM 200
 #define TAPPING_TERM_PER_KEY
+# TAPPING_FORCE_HOLD feature will be replaced by QUICK_TAP_TERM. https://docs.qmk.fm/ChangeLog/20230226#quick-tap-term
+#define TAPPING_FORCE_HOLD_PER_KEY
 
 #define PERMISSIVE_HOLD
 #define IGNORE_MOD_TAP_INTERRUPT
