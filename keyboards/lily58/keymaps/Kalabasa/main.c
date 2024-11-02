@@ -425,7 +425,7 @@ bool oled_task_user(void) {
     update_mode_ind(layer);
   } else {
     // Blink QWERTY indicator when game chat active
-    if (game_chat_state == 2) {
+    if (game_chat_state == 1) {
       update_mode_ind(
         (led_timer++ % 16) < 4
           ? LAYER_QWERTY
