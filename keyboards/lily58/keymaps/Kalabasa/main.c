@@ -55,7 +55,7 @@ static os_t os = OS_LINUX;
 // 0: Neutral, 1: Open bracket held, 2: Open & close brackets held
 static int bracket_state = 0;
 
-// 0: Inactive, 1: GAME_CHAT key down, 2: Active
+// 0: Inactive, 1: Active
 static int game_chat_state = 0;
 
 // For unshifted keys in layer 1
@@ -192,33 +192,28 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return true;
 
     /*
-    Temporarily activate normal typing on GAME_CHAT + ENTER.
-    Return to QWERTY after second ENTER or an ESCAPE.
+    Temporarily activate normal typing on GAME_CHAT.
+    Return to QWERTY after ENTER or ESCAPE.
     game_chat_state machine:
-      (0) -- GC --> (1) -- ENT --> (2)
-       ^             | GC up        | ENT/ESC
-       '----------------------------'
+      (0) -- GC --> (1)
+       ^-------------' ENT/ESC
     */
     case GAME_CHAT:
       if (record->event.pressed) {
-        if (game_chat_state == 0) game_chat_state++;
-      } else {
-        if (game_chat_state == 1) game_chat_state--;
+        if (game_chat_state == 0) {
+          game_chat_state++;
+          layer_move(LAYER_BASE);
+        }
       }
       return false;
     case KC_ENTER:
-      if (!record->event.pressed) {
-        if (game_chat_state == 1) {
-          game_chat_state++;
-          layer_move(LAYER_BASE);
-        } else if (game_chat_state == 2) {
-          game_chat_state = 0;
-          layer_move(LAYER_QWERTY);
-        }
+      if (!record->event.pressed && game_chat_state == 1) {
+        game_chat_state = 0;
+        layer_move(LAYER_QWERTY);
       }
       return true;
     case KC_ESCAPE:
-      if (!record->event.pressed && game_chat_state == 2) {
+      if (!record->event.pressed && game_chat_state == 1) {
         game_chat_state = 0;
         layer_move(LAYER_QWERTY);
       }
