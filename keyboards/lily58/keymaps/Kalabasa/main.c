@@ -43,14 +43,8 @@ const uint32_t PROGMEM unicode_map[] = {
   [RD_QUOTE] = U'”',
 };
 
-typedef enum {
-  OS_LINUX = 0,
-  OS_MACOS,
-  // OS_WINDOWS,
-} os_t;
-
 // For OS-aware shortcuts
-static os_t os = OS_LINUX;
+static os_variant_t os = OS_LINUX;
 
 // 0: Neutral, 1: Open bracket held, 2: Open & close brackets held
 static int bracket_state = 0;
@@ -83,6 +77,26 @@ void update_mode_ind(unsigned int layer);
 
 void keyboard_post_init_user(void) {
   os = keymap_config.swap_lctl_lgui ? OS_MACOS : OS_LINUX;
+}
+
+bool process_detected_host_os_user(os_variant_t detected_os) {
+  switch (detected_os) {
+    case OS_MACOS:
+    case OS_IOS:
+      os = detected_os;
+      keymap_config.swap_lctl_lgui = true;
+      set_unicode_input_mode(UNICODE_MODE_MACOS);
+      break;
+      break;
+    case OS_LINUX:
+      os = detected_os;
+      keymap_config.swap_lctl_lgui = false;
+      set_unicode_input_mode(UNICODE_MODE_LINUX);
+      break;
+    default:
+      break;
+  }
+  return true;
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -263,32 +277,32 @@ uint16_t get_primary_mod(void) {
   switch (os) {
     case OS_LINUX: return QK_LCTL;
     case OS_MACOS: return QK_LGUI;
+    default: return 0;
   }
-  return 0;
 }
 
 uint16_t get_desktop_mod(void) {
   switch (os) {
     case OS_LINUX: return QK_LCTL | QK_LGUI;
     case OS_MACOS: return QK_LCTL;
+    default: return 0;
   }
-  return 0;
 }
 
 uint16_t get_word_mod(void) {
   switch (os) {
     case OS_LINUX: return QK_LCTL;
     case OS_MACOS: return QK_LALT;
+    default: return 0;
   }
-  return 0;
 }
 
 uint16_t get_emoji_picker_hotkey(void) {
   switch (os) {
     case OS_LINUX: return G(KC_SEMICOLON);
     case OS_MACOS: return C(G(KC_SPACE));
+    default: return 0;
   }
-  return 0;
 }
 
 void (*get_record_func(keyrecord_t *record))(uint16_t) {
@@ -369,8 +383,14 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 }
 
 void render_os(void) {
-  oled_set_cursor(2 + os, 0);
-  oled_write_char(0xd4 + os, false);
+  int offset = 0;
+  switch (os) {
+    case OS_LINUX: offset = 0; break;
+    case OS_MACOS: offset = 1; break;
+    default: return;
+  }
+  oled_set_cursor(2 + offset, 0);
+  oled_write_char(0xd4 + offset, false);
 }
 
 void render_indicator(char* data) {

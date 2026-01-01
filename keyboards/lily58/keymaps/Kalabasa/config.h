@@ -27,15 +27,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SPLIT_MODS_ENABLE
 
 #define UNICODE_SELECTED_MODES UNICODE_MODE_LINUX
+#define OS_DETECTION_KEYBOARD_RESET
 
 #define TAPPING_TERM 200
 #define TAPPING_TERM_PER_KEY
-// TAPPING_FORCE_HOLD feature will be replaced by QUICK_TAP_TERM. https://docs.qmk.fm/ChangeLog/20230226#quick-tap-term
-#define TAPPING_FORCE_HOLD_PER_KEY
-
-#define PERMISSIVE_HOLD
-// "IGNORE_MOD_TAP_INTERRUPT is no longer necessary as it is now the default behavior of mod-tap keys"
-// #define IGNORE_MOD_TAP_INTERRUPT
 
 #define OLED_TIMEOUT 10000
 #define OLED_FADE_OUT
