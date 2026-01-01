@@ -1,7 +1,6 @@
 #include QMK_KEYBOARD_H
 #include "keycodes.h"
 #include "progmem.h"
-#include "features/custom_shift_keys.h"
 #include "features/bitwise_f.h"
 
 #define LAYER_BASE 0
@@ -50,14 +49,6 @@ static int bracket_state = 0;
 
 // 0: Inactive, 1: Active
 static int game_chat_state = 0;
-
-// For unshifted keys in layer 1
-const custom_shift_key_t custom_shift_keys[] = {
-  {KC_SEMICOLON, KC_SEMICOLON},
-  {KC_GRAVE, KC_GRAVE},
-  {KC_BACKSLASH, KC_BACKSLASH},
-};
-uint8_t NUM_CUSTOM_SHIFT_KEYS = sizeof(custom_shift_keys) / sizeof(custom_shift_key_t);
 
 // Bitwise FXX input keys
 const uint16_t bitwise_f_keys[] = { F_B1, F_B2, F_B3, F_B4 };
@@ -118,12 +109,25 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (!process_custom_shift_keys(keycode, record)) return false;
   if (!process_f_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);
 
   switch (keycode) {
+    /*
+    Unshifted keys on layer 1
+    */
+    case KC_GRAVE:
+    case KC_BACKSLASH:
+      if (get_highest_layer(layer_state) == LAYER_SHIFT) {
+        if (record->event.pressed) {
+          unregister_code(KC_LSFT);
+        } else {
+          register_code(KC_LSFT);
+        }
+      }
+      return true;
+
     case CG_NORM: // Ctrl as primary modifier (Linux/Windows)
       if (record->event.pressed) {
         os = OS_LINUX;
