@@ -21,7 +21,7 @@ uint8_t F_KEYS[] = {
   KC_F15,
 };
 
-bool process_bitwise_f(uint16_t keycode, keyrecord_t *record) {
+bool process_bitwise_f(uint16_t keycode, keyrecord_t *record, uint8_t *result) {
   int index = -1;
   for (int i = 0; i < NUM_BITWISE_F_KEYS; ++i) {
     if (keycode == bitwise_f_keys[i]) {
@@ -31,12 +31,14 @@ bool process_bitwise_f(uint16_t keycode, keyrecord_t *record) {
   }
 
   if (index == -1) {
+    result[0] = 0;
     return true;
   }
 
   if (record->event.pressed) {
     pressed_keys++;
     accumulator |= (1 << index);
+    result[0] = accumulator;
   } else {
     pressed_keys--;
     if (pressed_keys <= 0) {

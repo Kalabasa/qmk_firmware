@@ -65,8 +65,6 @@ const uint16_t bitwise_f_keys[] = { F_B1, F_B2, F_B3, F_B4 };
 uint8_t NUM_BITWISE_F_KEYS = sizeof(bitwise_f_keys) / sizeof(uint16_t);
 
 
-static int led_timer = 0;
-
 uint16_t get_primary_mod(void);
 uint16_t get_desktop_mod(void);
 uint16_t get_word_mod(void);
@@ -74,6 +72,8 @@ uint16_t get_emoji_picker_hotkey(void);
 void (*get_record_func(keyrecord_t *record))(uint16_t);
 void update_layer_ind(unsigned int layer);
 void update_mode_ind(unsigned int layer);
+void show_toast(char* message, int time);
+
 
 void keyboard_post_init_user(void) {
   os = keymap_config.swap_lctl_lgui ? OS_MACOS : OS_LINUX;
@@ -87,7 +87,6 @@ bool process_detected_host_os_user(os_variant_t detected_os) {
       keymap_config.swap_lctl_lgui = true;
       set_unicode_input_mode(UNICODE_MODE_MACOS);
       break;
-      break;
     case OS_LINUX:
       os = detected_os;
       keymap_config.swap_lctl_lgui = false;
@@ -99,10 +98,30 @@ bool process_detected_host_os_user(os_variant_t detected_os) {
   return true;
 }
 
+bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
+  static uint8_t f_key_result = 0;
+  static char f_key_msg[] = "F  ";
+
+  if (!process_bitwise_f(keycode, record, &f_key_result)) {
+    if (f_key_result) {
+      f_key_msg[1] = '0' + f_key_result;
+      f_key_msg[2] = ' ';
+      if (f_key_result >= 10) {
+        f_key_msg[2] = '0' + f_key_result % 10;
+        f_key_msg[1] = '0' + f_key_result / 10;
+      }
+      show_toast(f_key_msg, 10);
+    }
+    return false;
+  }
+
+  return true;
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (!process_layer_lock(keycode, record, LAYER_LOCK)) return false;
   if (!process_custom_shift_keys(keycode, record)) return false;
-  if (!process_bitwise_f(keycode, record)) return false;
+  if (!process_f_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);
 
@@ -344,6 +363,10 @@ static char mode_ind[] = {
   0xD0, 0xD1, 0xD2, 0xD3, 0,
 };
 
+static char* toast_msg = 0;
+static int toast_timer = 0;
+static int led_timer = 0;
+
 void update_layer_ind(unsigned int layer) {
   switch (layer) {
     case 1:
@@ -378,6 +401,11 @@ void update_mode_ind(unsigned int layer) {
   }
 }
 
+void show_toast(char* message, int time) {
+  toast_msg = message;
+  toast_timer = time;
+}
+
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
   return OLED_ROTATION_270;
 }
@@ -397,11 +425,11 @@ void render_indicator(char* data) {
   oled_set_cursor(1, 6);
   oled_write(data, false);
   oled_set_cursor(1, 7);
-  oled_write_ln(data + 5, false);
+  oled_write(data + 5, false);
   oled_set_cursor(1, 8);
-  oled_write_ln(data + 10, false);
+  oled_write(data + 10, false);
   oled_set_cursor(1, 9);
-  oled_write_ln(data + 15, false);
+  oled_write(data + 15, false);
 }
 
 void render_modifiers(unsigned int layer) {
@@ -438,6 +466,14 @@ void render_modifiers(unsigned int layer) {
 bool oled_task_user(void) {
   oled_clear();
 
+  if (toast_msg) {
+    oled_set_cursor(0, 10);
+    oled_write(toast_msg, false);
+    if (--toast_timer <= 0) {
+      toast_msg = 0;
+    }
+  }
+
   if (is_keyboard_master()) render_os();
 
   unsigned int layer = get_highest_layer(layer_state);
@@ -449,7 +485,7 @@ bool oled_task_user(void) {
     // Blink QWERTY indicator when game chat active
     if (game_chat_state == 1) {
       update_mode_ind(
-        (led_timer++ % 16) < 4
+        (led_timer++ % 12) < 4
           ? LAYER_QWERTY
           : LAYER_BASE
       );

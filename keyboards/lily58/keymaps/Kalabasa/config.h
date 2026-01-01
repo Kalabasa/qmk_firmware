@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define TAPPING_TERM 200
 #define TAPPING_TERM_PER_KEY
+#define QUICK_TAP_TERM 0
 
 #define OLED_TIMEOUT 10000
 #define OLED_FADE_OUT
