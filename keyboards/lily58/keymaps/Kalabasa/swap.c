@@ -1,4 +1,4 @@
-#include "lily58.h"
+#include "lily58.h" # compile error - i just disabled swap hands
 
 #ifdef SWAP_HANDS_ENABLE
 __attribute__ ((weak))

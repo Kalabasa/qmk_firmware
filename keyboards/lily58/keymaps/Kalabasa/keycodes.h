@@ -1,5 +1,7 @@
+#pragma once
+
 enum my_keycodes {
-  BRACKET_BACK = SAFE_RANGE,
+  BRACKET_BACK = QK_USER, // QK_USER == SAFE_RANGE
   BRACKET_FORWARD,
   DESKTOP_UP,
   DESKTOP_DOWN,

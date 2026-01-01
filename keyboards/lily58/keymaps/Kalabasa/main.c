@@ -93,16 +93,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   void (*record_func)(uint16_t) = get_record_func(record);
 
   switch (keycode) {
-    case LCG_NRM: // Ctrl as primary modifier (Linux/Windows)
+    case CG_NORM: // Ctrl as primary modifier (Linux/Windows)
       if (record->event.pressed) {
         os = OS_LINUX;
-        set_unicode_input_mode(UC_LNX);
+        set_unicode_input_mode(UNICODE_MODE_LINUX);
       }
       return true;
-    case LCG_SWP: // GUI as primary modifier (macOS)
+    case CG_SWAP: // GUI as primary modifier (macOS)
       if (record->event.pressed) {
         os = OS_MACOS;
-        set_unicode_input_mode(UC_MAC);
+        set_unicode_input_mode(UNICODE_MODE_MACOS);
       }
       return true;
 
@@ -146,8 +146,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case WORD_DELETE:
       if (record->event.pressed) {
         uint16_t word_mod = get_word_mod();
-        unregister_code(KC_LSHIFT);
-        unregister_code(KC_RSHIFT);
+        unregister_code(KC_LSFT);
+        unregister_code(KC_RSFT);
         tap_code(KC_LEFT);
         tap_code16(word_mod | KC_RIGHT);
         tap_code16(word_mod | S(KC_LEFT));
@@ -226,12 +226,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 layer_state_t layer_state_set_user(layer_state_t state) {
   if (IS_LAYER_ON_STATE(state, LAYER_SHIFT)) {
-    register_code(KC_LSHIFT);
+    register_code(KC_LSFT);
   } else {
-    unregister_code(KC_LSHIFT);
+    unregister_code(KC_LSFT);
   }
 
-  swap_hands = IS_LAYER_ON_STATE(state, 9); // Swap QWERTY
+  // Disabled due to breaking API changes from QMK
+  // swap_hands = IS_LAYER_ON_STATE(state, 9); // Swap QWERTY
 
   unsigned int layer = get_highest_layer(state);
   update_layer_ind(layer);
@@ -384,31 +385,32 @@ void render_indicator(char* data) {
 }
 
 void render_modifiers(unsigned int layer) {
-  if (host_keyboard_leds() & (1<<USB_LED_CAPS_LOCK)) {
-    oled_set_cursor_px(0, 0);
+  if (host_keyboard_led_state().caps_lock) {
+    oled_set_cursor(0, 0);
     oled_write_char(0xc4, false);
   }
 
   unsigned int mods = get_mods();
-  const int dx = is_keyboard_left() ? -7 : 7;
-  int x = is_keyboard_left() ? (4 - dx*3) : 4;
+  const int dx = is_keyboard_left() ? -1 : 1;
+  int x = (5 - dx * 3) / 2;
+  int y = 14;
   if (mods & MOD_MASK_CTRL) {
-    oled_set_cursor_px(x, 15);
+    oled_set_cursor(x, y);
     oled_write_char(0xc7, false);
   }
   x += dx;
   if (mods & MOD_MASK_ALT) {
-    oled_set_cursor_px(x, 15);
+    oled_set_cursor(x, y);
     oled_write_char(0xc6, false);
   }
   x += dx;
   if (mods & MOD_MASK_GUI) {
-    oled_set_cursor_px(x, 15);
+    oled_set_cursor(x, y);
     oled_write_char(0xc5, false);
   }
   x += dx;
   if (layer != 1 && mods & MOD_MASK_SHIFT) {
-    oled_set_cursor_px(x, 15);
+    oled_set_cursor(x, y);
     oled_write_char(0xc8, false);
   }
 }
