@@ -2,7 +2,6 @@
 #include "keycodes.h"
 #include "progmem.h"
 #include "features/custom_shift_keys.h"
-#include "features/layer_lock.h"
 #include "features/bitwise_f.h"
 
 #define LAYER_BASE 0
@@ -119,7 +118,6 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (!process_layer_lock(keycode, record, LAYER_LOCK)) return false;
   if (!process_custom_shift_keys(keycode, record)) return false;
   if (!process_f_keys(keycode, record)) return false;
 

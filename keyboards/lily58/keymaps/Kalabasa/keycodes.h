@@ -12,7 +12,6 @@ enum my_keycodes {
   WORD_SELECT,
   WORD_DELETE,
   EMOJI,
-  LAYER_LOCK,
   F_B1,
   F_B2,
   F_B3,

@@ -180,7 +180,7 @@
       "KC_NO",
       "KC_TRNS",
       "KC_NO",
-      "ANY(LAYER_LOCK)",
+      "QK_LLCK",
       "KC_TRNS",
       "KC_NO",
       "KC_NO",
@@ -241,7 +241,7 @@
       "KC_NO",
       "KC_NO",
       "KC_TRNS",
-      "ANY(LAYER_LOCK)",
+      "QK_LLCK",
       "KC_NO",
       "KC_TRNS",
       "KC_NO"
@@ -301,7 +301,7 @@
       "KC_NO",
       "KC_NO",
       "KC_TRNS",
-      "ANY(LAYER_LOCK)",
+      "QK_LLCK",
       "KC_NO",
       "KC_NO",
       "KC_TRNS"
@@ -361,7 +361,7 @@
       "KC_NO",
       "KC_NO",
       "KC_TRNS",
-      "ANY(LAYER_LOCK)",
+      "QK_LLCK",
       "KC_TRNS",
       "KC_NO",
       "KC_NO"
