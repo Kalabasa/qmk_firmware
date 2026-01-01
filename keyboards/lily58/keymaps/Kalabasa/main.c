@@ -226,10 +226,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     /*
     Temporarily activate normal typing on GAME_CHAT.
-    Return to QWERTY after ENTER or ESCAPE.
+    Return to QWERTY after ENTER or ESCAPE or RGUI.
     game_chat_state machine:
       (0) -- GC --> (1)
-       ^-------------' ENT/ESC
+       ^-------------' ENT/ESC/RGUI
     */
     case GAME_CHAT:
       if (record->event.pressed) {
@@ -239,13 +239,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         }
       }
       return false;
-    case KC_ENTER:
-      if (!record->event.pressed && game_chat_state == 1) {
-        game_chat_state = 0;
-        layer_move(LAYER_QWERTY);
-      }
-      return true;
-    case KC_ESCAPE:
+    case KC_ENTER: // reset on send
+    case KC_ESCAPE: // reset on cancel
+    case KC_RGUI: // reset without doing in-game action
       if (!record->event.pressed && game_chat_state == 1) {
         game_chat_state = 0;
         layer_move(LAYER_QWERTY);
