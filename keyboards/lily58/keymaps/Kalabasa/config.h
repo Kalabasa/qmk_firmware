@@ -41,7 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define OLED_FADE_OUT
 #define OLED_FADE_OUT_INTERVAL 15
 #define OLED_BRIGHTNESS 64
-#define OLED_COLUMN_OFFSET 2
+// #define OLED_COLUMN_OFFSET 2
 
 #undef OLED_FONT_H
 #define OLED_FONT_H "keymaps/Kalabasa/font.c"
