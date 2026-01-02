@@ -3,6 +3,7 @@
 #include "progmem.h"
 #include "features/baybayin.h"
 #include "features/bitwise_f.h"
+#include "features/kana.h"
 
 #define LAYER_BASE 0
 #define LAYER_SHIFT 1
@@ -115,7 +116,7 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (layer_state_is(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
+  if (layer_state_is(LAYER_BAYBAYIN) && !process_kana(keycode, record)) return false;
   if (!process_f_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);

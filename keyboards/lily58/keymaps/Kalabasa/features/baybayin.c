@@ -1,31 +1,31 @@
 #include "baybayin.h"
 
-const char* KUDLIT_I = "ᜒ";
-const char* KUDLIT_U = "ᜓ";
-const char* KUDLIT_KRUS = "᜔";
-const char* PAMUDPOD = "᜕";
+static char* KUDLIT_I = "ᜒ";
+static char* KUDLIT_U = "ᜓ";
+// static char* KUDLIT_KRUS = "᜔";
+static char* PAMUDPOD = "᜕";
 
 // A-Z mapped to baybayin in UTF-8.
 // Since all chars are in range U+1700..U+171F, the UTF-8 encoding of each char is always 3 bytes.
 // Letters with no equivalent use 3 null bytes.
 // Thus, this can be indexed in multiples of 3.
-char* CHARS = "ᜀᜊ\0\0\0ᜇᜁ\0\0\0ᜄᜑᜁ\0\0\0ᜃᜎᜋᜈᜂᜉ\0\0\0ᜇᜐᜆᜂ\0\0\0ᜏ\0\0\0ᜌ\0\0\0";
+static char* CHARS = "ᜀᜊ\0\0\0ᜇᜁ\0\0\0ᜄᜑᜁ\0\0\0ᜃᜎᜋᜈᜂᜉ\0\0\0ᜇᜐᜆᜂ\0\0\0ᜏ\0\0\0ᜌ\0\0\0";
 
-bool is_consonant(uint16_t keycode) {
-  return keycode == KC_K
-    || keycode == KC_G
-    || keycode == KC_T
+static bool is_consonant(uint16_t keycode) {
+  return keycode == KC_B
     || keycode == KC_D
-    || keycode == KC_R
+    || keycode == KC_G
+    || keycode == KC_H
+    || keycode == KC_K
+    || keycode == KC_L
+    || keycode == KC_M
     || keycode == KC_N
     || keycode == KC_P
-    || keycode == KC_B
-    || keycode == KC_M
-    || keycode == KC_Y
-    || keycode == KC_L
-    || keycode == KC_W
+    || keycode == KC_R
     || keycode == KC_S
-    || keycode == KC_H;
+    || keycode == KC_T
+    || keycode == KC_W
+    || keycode == KC_Y;
 }
 
 static uint16_t curr_keycode = 0;
@@ -37,7 +37,8 @@ bool process_baybayin(uint16_t keycode, keyrecord_t *record) {
   curr_keycode = QK_MODS_GET_BASIC_KEYCODE(keycode);
 
   if (
-    !(curr_keycode >= KC_A && curr_keycode <= KC_Z)
+    !record->event.pressed
+    || !(curr_keycode >= KC_A && curr_keycode <= KC_Z)
     || get_mods()
   ) {
     if (record->event.pressed) {
@@ -67,7 +68,7 @@ bool process_baybayin(uint16_t keycode, keyrecord_t *record) {
         send_unicode_string(buf);
         send_unicode_string(PAMUDPOD);
       }
-    } else {
+    } else { // curr_keycode is vowel
       if (is_consonant(prev_keycode)) {
         if (curr_keycode == KC_A) {
           tap_code(KC_BACKSPACE); // delete virama
@@ -78,13 +79,15 @@ bool process_baybayin(uint16_t keycode, keyrecord_t *record) {
           tap_code(KC_BACKSPACE); // delete virama
           send_unicode_string(KUDLIT_U);
         }
-      } else {
+      } else { // prev_keycode is vowel
         strncpy(buf, baybayin_ptr, 3);
         send_unicode_string(buf);
       }
     }
+
     prev_keycode = curr_keycode;
     prev_key_timer = timer_read();
   }
+
   return false;
 }
