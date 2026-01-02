@@ -34,24 +34,21 @@ static uint16_t prev_key_timer;
 
 bool process_baybayin(uint16_t keycode, keyrecord_t *record) {
   static char buf[4] = "\0\0\0\0";
-  curr_keycode = keycode & 0xFF;
+  curr_keycode = QK_MODS_GET_BASIC_KEYCODE(keycode);
 
   if (
-    record->event.pressed
-    && (
-      !curr_keycode
-      || !(curr_keycode >= KC_A && curr_keycode <= KC_Z)
-      || get_mods()
-    )
+    !(curr_keycode >= KC_A && curr_keycode <= KC_Z)
+    || get_mods()
   ) {
-    prev_keycode = 0;
+    if (record->event.pressed) {
+      prev_keycode = 0;
+    }
     return true;
   }
 
   char* baybayin_ptr = CHARS + (curr_keycode - KC_A) * 3;
   if (!*baybayin_ptr) {
-    prev_keycode = 0;
-    return true;
+    return false;
   }
 
   if (prev_keycode && timer_elapsed(prev_key_timer) > 2000) {
