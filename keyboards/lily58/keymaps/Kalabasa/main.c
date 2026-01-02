@@ -115,7 +115,7 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (IS_LAYER_ON(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
+  if (layer_state_is(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
   if (!process_f_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);
@@ -127,7 +127,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case KC_GRAVE:
     case KC_BACKSLASH:
     case KC_SEMICOLON:
-      if (IS_LAYER_ON(LAYER_SHIFT)) {
+      if (layer_state_is(LAYER_SHIFT)) {
         if (record->event.pressed) {
           unregister_code(KC_LSFT);
         } else {
@@ -270,12 +270,9 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     unregister_code(KC_LSFT);
   }
 
-  // Disabled due to breaking API changes from QMK
-  // swap_hands = IS_LAYER_ON_STATE(state, 9); // Swap QWERTY
-
   unsigned int layer = get_highest_layer(state);
   update_layer_ind(layer);
-  update_mode_ind(layer);
+  update_mode_ind(state);
 
   return state;
 }
@@ -375,13 +372,13 @@ static int led_timer = 0;
 
 void update_layer_ind(unsigned int layer) {
   switch (layer) {
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-      layer_ind_state = layer <= 2 ? SHOW_LEFT : SHOW_RIGHT;
+    case LAYER_SHIFT:
+    case LAYER_SYMBOL:
+    case LAYER_NUM:
+    case LAYER_FUNC:
+    case LAYER_NAV:
+    case LAYER_EMOJI:
+      layer_ind_state = layer <= LAYER_SYMBOL ? SHOW_LEFT : SHOW_RIGHT;
       int offset = 2 * (layer - 1);
       layer_ind[6] = 0x84 + offset;
       layer_ind[7] = 0x85 + offset;
@@ -393,17 +390,21 @@ void update_layer_ind(unsigned int layer) {
   }
 }
 
-void update_mode_ind(unsigned int layer) {
-  switch (layer) {
-    case LAYER_QWERTY:
-      mode_ind_state = true;
-      mode_ind[6] = 0x94;
-      mode_ind[7] = 0x95;
-      mode_ind[11] = 0xB4;
-      mode_ind[12] = 0xB5;
-      break;
-    default:
-      mode_ind_state = false;
+void update_mode_ind(layer_state_t state) {
+  if (layer_state_cmp(state, LAYER_QWERTY)) {
+    mode_ind_state = true;
+    mode_ind[6] = 0x94;
+    mode_ind[7] = 0x95;
+    mode_ind[11] = 0xB4;
+    mode_ind[12] = 0xB5;
+  } else if (layer_state_cmp(state, LAYER_BAYBAYIN)) {
+    mode_ind_state = true;
+    mode_ind[6] = 0x98;
+    mode_ind[7] = 0x99;
+    mode_ind[11] = 0xB8;
+    mode_ind[12] = 0xB9;
+  } else {
+    mode_ind_state = false;
   }
 }
 
@@ -486,7 +487,7 @@ bool oled_task_user(void) {
 
   if (!is_keyboard_master()) {
     update_layer_ind(layer);
-    update_mode_ind(layer);
+    update_mode_ind(layer_state);
   } else {
     // Blink QWERTY indicator when game chat active
     if (game_chat_state == 1) {
