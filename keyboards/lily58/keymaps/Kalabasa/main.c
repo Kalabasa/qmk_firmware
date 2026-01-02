@@ -116,7 +116,7 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (IS_LAYER_ON(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
-  if (IS_LAYER_ON(LAYER_FUNC) && !process_f_keys(keycode, record)) return false;
+  if (!process_f_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);
 
