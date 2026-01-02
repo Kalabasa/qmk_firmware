@@ -109,7 +109,7 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
         }
       } else { // curr_keycode is vowel
         if (is_consonant(prev_keycode)) {
-          int backspaces = 2;
+          int backspaces = preprev_keycode == prev_keycode ? 1 : 2;
           int letter_idx = prev_keycode - KC_A;
           int offset = vowel_offset(curr_keycode);
           char* extra = NULL;
@@ -121,6 +121,9 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
           } else if (match("chi") || match("tsu")) {
             backspaces = 3;
             letter_idx = KC_T - KC_A;
+          } else if (match("dzu")) {
+            backspaces = 3;
+            letter_idx = KC_D - KC_A;
           } else if (
             (curr_keycode == KC_A || curr_keycode == KC_U || curr_keycode == KC_O)
             && (
