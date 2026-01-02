@@ -476,7 +476,7 @@ bool oled_task_user(void) {
     oled_set_cursor(0, 10);
     oled_write(toast_msg, false);
     if (--toast_timer <= 0) {
-      toast_msg = 0;
+      toast_msg = NULL;
     }
   }
 
