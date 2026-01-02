@@ -5,47 +5,11 @@ const char* KUDLIT_U = "ᜓ";
 const char* KUDLIT_KRUS = "᜔";
 const char* PAMUDPOD = "᜕";
 
-char* get_base_baybayin(uint16_t keycode) {
-  switch (keycode) {
-    case KC_K:
-      return "ᜃ";
-    case KC_G:
-      return "ᜄ";
-    case KC_T:
-      return "ᜆ";
-    case KC_D:
-    case KC_R:
-      return "ᜇ";
-    case KC_N:
-      return "ᜈ";
-    case KC_P:
-      return "ᜉ";
-    case KC_B:
-      return "ᜊ";
-    case KC_M:
-      return "ᜋ";
-    case KC_Y:
-      return "ᜌ";
-    case KC_L:
-      return "ᜎ";
-    case KC_W:
-      return "ᜏ";
-    case KC_S:
-      return "ᜐ";
-    case KC_H:
-      return "ᜑ";
-    case KC_A:
-      return "ᜀ";
-    case KC_I:
-    case KC_E:
-      return "ᜁ";
-    case KC_U:
-    case KC_O:
-      return "ᜂ";
-    default:
-      return NULL;
-  }
-}
+// A-Z mapped to baybayin in UTF-8.
+// Since all chars are in range U+1700..U+171F, the UTF-8 encoding of each char is always 3 bytes.
+// Letters with no equivalent use 3 null bytes.
+// Thus, this can be indexed in multiples of 3.
+char* CHARS = "ᜀᜊ\0\0\0ᜇᜁ\0\0\0ᜄᜑᜁ\0\0\0ᜃᜎᜋᜈᜂᜉ\0\0\0ᜇᜐᜆᜂ\0\0\0ᜏ\0\0\0ᜌ\0\0\0";
 
 bool is_consonant(uint16_t keycode) {
   return keycode == KC_K
@@ -69,20 +33,28 @@ static uint16_t prev_keycode = 0;
 static uint16_t prev_key_timer;
 
 bool process_baybayin(uint16_t keycode, keyrecord_t *record) {
+  static char buf[4] = "\0\0\0\0";
   curr_keycode = keycode & 0xFF;
 
-  if (!curr_keycode || get_mods()) {
+  if (
+    record->event.pressed
+    && (
+      !curr_keycode
+      || !(curr_keycode >= KC_A && curr_keycode <= KC_Z)
+      || get_mods()
+    )
+  ) {
     prev_keycode = 0;
     return true;
   }
 
-  char* baybayin = get_base_baybayin(curr_keycode);
-  if (!baybayin) {
+  char* baybayin_ptr = CHARS + (curr_keycode - KC_A) * 3;
+  if (!*baybayin_ptr) {
     prev_keycode = 0;
     return true;
   }
 
-  if (prev_keycode && timer_elapsed(prev_key_timer) > 3000) {
+  if (prev_keycode && timer_elapsed(prev_key_timer) > 2000) {
     prev_keycode = 0;
   }
 
@@ -94,7 +66,8 @@ bool process_baybayin(uint16_t keycode, keyrecord_t *record) {
         send_unicode_string("ᜅ");
         send_unicode_string(PAMUDPOD);
       } else {
-        send_unicode_string(baybayin);
+        strncpy(buf, baybayin_ptr, 3);
+        send_unicode_string(buf);
         send_unicode_string(PAMUDPOD);
       }
     } else {
@@ -109,7 +82,8 @@ bool process_baybayin(uint16_t keycode, keyrecord_t *record) {
           send_unicode_string(KUDLIT_U);
         }
       } else {
-        send_unicode_string(baybayin);
+        strncpy(buf, baybayin_ptr, 3);
+        send_unicode_string(buf);
       }
     }
     prev_keycode = curr_keycode;
