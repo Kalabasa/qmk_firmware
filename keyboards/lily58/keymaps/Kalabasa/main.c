@@ -1,6 +1,7 @@
 #include QMK_KEYBOARD_H
 #include "keycodes.h"
 #include "progmem.h"
+#include "features/baybayin.h"
 #include "features/bitwise_f.h"
 
 #define LAYER_BASE 0
@@ -109,6 +110,7 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  if (!process_baybayin(keycode, record)) return false;
   if (!process_f_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);
