@@ -119,6 +119,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     */
     case KC_GRAVE:
     case KC_BACKSLASH:
+    case KC_SEMICOLON:
       if (get_highest_layer(layer_state) == LAYER_SHIFT) {
         if (record->event.pressed) {
           unregister_code(KC_LSFT);
