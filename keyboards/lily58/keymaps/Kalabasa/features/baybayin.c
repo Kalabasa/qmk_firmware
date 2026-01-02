@@ -92,6 +92,7 @@ bool process_baybayin(uint16_t keycode, keyrecord_t *record) {
         tap_code(KC_BACKSPACE); // delete virama
         tap_code(KC_BACKSPACE); // delete 'ᜈ'
         send_unicode_string("ᜅ");
+        send_unicode_string(PAMUDPOD);
       } else {
         send_unicode_string(baybayin);
         send_unicode_string(PAMUDPOD);
