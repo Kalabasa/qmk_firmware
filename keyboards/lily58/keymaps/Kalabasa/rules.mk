@@ -2,12 +2,12 @@
 #   change to "no" to disable the options, or define them in the Makefile in
 #   the appropriate keymap folder that will get included automatically
 #
-BOOTMAGIC_ENABLE = no       # Enable Bootmagic Lite
-MOUSEKEY_ENABLE = no        # Mouse keys
-EXTRAKEY_ENABLE = yes        # Audio control and System control
-SWAP_HANDS_ENABLE = no      # Nice to have, but I don't use it
-OLED_ENABLE = yes     # OLED display
-UNICODEMAP_ENABLE = yes
+BOOTMAGIC_ENABLE = no # Enable Bootmagic Lite
+MOUSEKEY_ENABLE = no # Mouse keys
+EXTRAKEY_ENABLE = yes # Audio control and System control
+SWAP_HANDS_ENABLE = no # Nice to have, but I don't use it
+OLED_ENABLE = yes # OLED display
+UNICODEMAP_ENABLE = yes # Emojis
 OS_DETECTION_ENABLE = yes
 LAYER_LOCK_ENABLE = yes
 

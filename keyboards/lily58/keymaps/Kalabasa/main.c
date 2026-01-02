@@ -6,8 +6,13 @@
 
 #define LAYER_BASE 0
 #define LAYER_SHIFT 1
+#define LAYER_SYMBOL 2
+#define LAYER_NUM 3
+#define LAYER_FUNC 4
+#define LAYER_NAV 5
 #define LAYER_EMOJI 6
 #define LAYER_QWERTY 8
+#define LAYER_BAYBAYIN 9
 
 extern keymap_config_t keymap_config;
 
@@ -110,8 +115,8 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (!process_baybayin(keycode, record)) return false;
-  if (!process_f_keys(keycode, record)) return false;
+  if (IS_LAYER_ON(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
+  if (IS_LAYER_ON(LAYER_FUNC) && !process_f_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);
 
@@ -122,7 +127,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case KC_GRAVE:
     case KC_BACKSLASH:
     case KC_SEMICOLON:
-      if (get_highest_layer(layer_state) == LAYER_SHIFT) {
+      if (IS_LAYER_ON(LAYER_SHIFT)) {
         if (record->event.pressed) {
           unregister_code(KC_LSFT);
         } else {
