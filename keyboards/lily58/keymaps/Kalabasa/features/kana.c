@@ -6,7 +6,7 @@ static char* HIRAGANA[] = {
   // A I U E O
   "あああああ", // A'
   "ばびぶべぼ", // B
-  NULL,         // C
+  "ちちちちち", // C
   "だぢづでど", // D
   "えええええ", // E'
   "ふふふふふ", // F*
@@ -34,6 +34,7 @@ static char* HIRAGANA[] = {
 
 static bool is_consonant(uint16_t keycode) {
   return keycode == KC_B
+    || keycode == KC_C
     || keycode == KC_D
     || keycode == KC_G
     || keycode == KC_H
@@ -96,7 +97,7 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
   if (record->event.pressed) {
     // the original letter is always sent for any other uses
     tap_code(curr_keycode);
-
+    
     if (HIRAGANA[curr_keycode - KC_A]) {
       if (is_consonant(curr_keycode)) {
         if (curr_keycode == KC_N) {
@@ -104,12 +105,13 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
           send_unicode_string("ん");
         } else if (curr_keycode == prev_keycode) {
           tap_code(KC_BACKSPACE); // delete repeated letter
-          tap_code(KC_BACKSPACE); // delete repeated letter
+          tap_code(KC_BACKSPACE);
           send_unicode_string("っ");
+          tap_code(curr_keycode);
         }
       } else { // curr_keycode is vowel
         if (is_consonant(prev_keycode)) {
-          int backspaces = preprev_keycode == prev_keycode ? 1 : 2;
+          int backspaces = 2;
           int letter_idx = prev_keycode - KC_A;
           int offset = vowel_offset(curr_keycode);
           char* extra = NULL;

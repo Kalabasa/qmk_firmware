@@ -14,6 +14,8 @@
 #define LAYER_EMOJI 6
 #define LAYER_QWERTY 8
 #define LAYER_BAYBAYIN 9
+#define LAYER_KANA 10
+#define MODAL_LAYERS ((1u << LAYER_QWERTY) | (1u << LAYER_BAYBAYIN) | (1u << LAYER_KANA))
 
 extern keymap_config_t keymap_config;
 
@@ -67,8 +69,8 @@ uint16_t get_desktop_mod(void);
 uint16_t get_word_mod(void);
 uint16_t get_emoji_picker_hotkey(void);
 void (*get_record_func(keyrecord_t *record))(uint16_t);
-void update_layer_ind(unsigned int layer);
-void update_mode_ind(unsigned int layer);
+void update_layer_ind(layer_state_t state);
+void update_mode_ind(layer_state_t state);
 void show_toast(char* message, int time);
 
 
@@ -116,7 +118,8 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (layer_state_is(LAYER_BAYBAYIN) && !process_kana(keycode, record)) return false;
+  if (layer_state_is(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
+  if (layer_state_is(LAYER_KANA) && !process_kana(keycode, record)) return false;
   if (!process_f_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);
@@ -237,10 +240,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     /*
     Temporarily activate normal typing on GAME_CHAT.
-    Return to QWERTY after ENTER or ESCAPE or RGUI.
+    Return to QWERTY after ENTER or ESCAPE or TO(0).
     game_chat_state machine:
       (0) -- GC --> (1)
-       ^-------------' ENT/ESC/RGUI
+       ^-------------' ENT/ESC/TO(0)
     */
     case GAME_CHAT:
       if (record->event.pressed) {
@@ -252,10 +255,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return false;
     case KC_ENTER: // reset on send
     case KC_ESCAPE: // reset on cancel
-    case KC_RGUI: // reset without doing in-game action
+    case TO(0): // reset without doing in-game action
       if (!record->event.pressed && game_chat_state == 1) {
         game_chat_state = 0;
-        layer_move(LAYER_QWERTY);
+        if (keycode != TO(0)) layer_move(LAYER_QWERTY);
       }
       return true;
 
@@ -271,8 +274,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     unregister_code(KC_LSFT);
   }
 
-  unsigned int layer = get_highest_layer(state);
-  update_layer_ind(layer);
+  update_layer_ind(state);
   update_mode_ind(state);
 
   return state;
@@ -371,7 +373,8 @@ static char* toast_msg = 0;
 static int toast_timer = 0;
 static int led_timer = 0;
 
-void update_layer_ind(unsigned int layer) {
+void update_layer_ind(layer_state_t state) {
+  unsigned int layer = get_highest_layer(state & ~MODAL_LAYERS);
   switch (layer) {
     case LAYER_SHIFT:
     case LAYER_SYMBOL:
@@ -392,7 +395,7 @@ void update_layer_ind(unsigned int layer) {
 }
 
 void update_mode_ind(layer_state_t state) {
-  if (layer_state_cmp(state, LAYER_QWERTY)) {
+  if (layer_state_cmp(state, LAYER_QWERTY) || game_chat_state == 1) {
     mode_ind_state = true;
     mode_ind[6] = 0x94;
     mode_ind[7] = 0x95;
@@ -404,6 +407,12 @@ void update_mode_ind(layer_state_t state) {
     mode_ind[7] = 0x99;
     mode_ind[11] = 0xB8;
     mode_ind[12] = 0xB9;
+  } else if (layer_state_cmp(state, LAYER_KANA)) {
+    mode_ind_state = true;
+    mode_ind[6] = 0x9A;
+    mode_ind[7] = 0x9B;
+    mode_ind[11] = 0xBA;
+    mode_ind[12] = 0xBB;
   } else {
     mode_ind_state = false;
   }
@@ -484,34 +493,31 @@ bool oled_task_user(void) {
 
   if (is_keyboard_master()) render_os();
 
-  unsigned int layer = get_highest_layer(layer_state);
-
   if (!is_keyboard_master()) {
-    update_layer_ind(layer);
+    update_layer_ind(layer_state);
     update_mode_ind(layer_state);
-  } else {
-    // Blink QWERTY indicator when game chat active
-    if (game_chat_state == 1) {
-      update_mode_ind(
-        (led_timer++ % 12) < 4
-          ? LAYER_QWERTY
-          : LAYER_BASE
-      );
-    }
   }
 
+  unsigned int layer = get_highest_layer(layer_state & ~MODAL_LAYERS);
   bool left = is_keyboard_left();
   bool show_left = layer_ind_state == SHOW_LEFT;
-  if (layer_ind_state && (layer_ind_state == SHOW_BOTH || left == show_left)) {
-    bool blink = is_layer_locked(layer) || layer == LAYER_EMOJI;
-    if (!blink || (led_timer++ % 24) < 16) {
-      render_indicator(layer_ind);
-    }
-  } else if (mode_ind_state) {
+  bool blink_layer = is_layer_locked(layer) || layer == LAYER_EMOJI || game_chat_state == 1;
+  bool blink_mode = game_chat_state == 1;
+  if (
+    layer_ind_state
+    && (!blink_layer || (led_timer % 16) < 8)
+    && (layer_ind_state == SHOW_BOTH || left == show_left)
+  ) {
+    render_indicator(layer_ind);
+  } else if (
+    mode_ind_state
+    && (!blink_mode || (led_timer % 16) >= 8)
+  ) {
     render_indicator(mode_ind);
   }
-
+  
   render_modifiers(layer);
-
+  
+  led_timer++;
   return false;
 }
