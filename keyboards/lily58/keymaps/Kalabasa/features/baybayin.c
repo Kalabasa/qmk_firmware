@@ -57,32 +57,37 @@ bool process_baybayin(uint16_t keycode, keyrecord_t *record) {
   }
 
   if (record->event.pressed) {
-    if (is_consonant(curr_keycode)) {
-      if (prev_keycode == KC_N && curr_keycode == KC_G) {
-        tap_code(KC_BACKSPACE); // delete virama
-        tap_code(KC_BACKSPACE); // delete 'ᜈ'
-        send_unicode_string("ᜅ");
-        send_unicode_string(PAMUDPOD);
-      } else {
-        strncpy(buf, baybayin_ptr, 3);
-        send_unicode_string(buf);
-        send_unicode_string(PAMUDPOD);
+    bool curr_cons = is_consonant(curr_keycode);
+    bool prev_cons = is_consonant(prev_keycode);
+
+    // Special case: N + G => ᜅ
+    if (prev_keycode == KC_N && curr_keycode == KC_G) {
+      tap_code(KC_BACKSPACE); // virama
+      tap_code(KC_BACKSPACE); // ᜈ
+      send_unicode_string("ᜅ");
+      send_unicode_string(PAMUDPOD);
+    }
+    // Vowel following consonant: remove virama, maybe add mark
+    else if (prev_cons && !curr_cons) {
+      tap_code(KC_BACKSPACE); // virama
+
+      if (curr_keycode == KC_I || curr_keycode == KC_E) {
+        send_unicode_string(KUDLIT_I);
+      } else if (curr_keycode == KC_U || curr_keycode == KC_O) {
+        send_unicode_string(KUDLIT_U);
       }
-    } else { // curr_keycode is vowel
-      if (is_consonant(prev_keycode)) {
-        if (curr_keycode == KC_A) {
-          tap_code(KC_BACKSPACE); // delete virama
-        } else if (curr_keycode == KC_I || curr_keycode == KC_E) {
-          tap_code(KC_BACKSPACE); // delete virama
-          send_unicode_string(KUDLIT_I);
-        } else if (curr_keycode == KC_U || curr_keycode == KC_O) {
-          tap_code(KC_BACKSPACE); // delete virama
-          send_unicode_string(KUDLIT_U);
-        }
-      } else { // prev_keycode is vowel
-        strncpy(buf, baybayin_ptr, 3);
-        send_unicode_string(buf);
-      }
+      // KC_A emits nothing
+    }
+    // Consonant
+    else if (curr_cons) {
+      strncpy(buf, baybayin_ptr, 3);
+      send_unicode_string(buf);
+      send_unicode_string(PAMUDPOD);
+    }
+    // Vowel not after consonant
+    else {
+      strncpy(buf, baybayin_ptr, 3);
+      send_unicode_string(buf);
     }
 
     prev_keycode = curr_keycode;
