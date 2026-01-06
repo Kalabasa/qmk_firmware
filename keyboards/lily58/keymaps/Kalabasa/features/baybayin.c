@@ -60,32 +60,23 @@ bool process_baybayin(uint16_t keycode, keyrecord_t *record) {
     bool curr_cons = is_consonant(curr_keycode);
     bool prev_cons = is_consonant(prev_keycode);
 
-    // Special case: N + G => ᜅ
     if (prev_keycode == KC_N && curr_keycode == KC_G) {
       tap_code(KC_BACKSPACE); // virama
       tap_code(KC_BACKSPACE); // ᜈ
       send_unicode_string("ᜅ");
       send_unicode_string(PAMUDPOD);
-    }
-    // Vowel following consonant: remove virama, maybe add mark
-    else if (prev_cons && !curr_cons) {
+    } else if (prev_cons && !curr_cons) {
       tap_code(KC_BACKSPACE); // virama
-
       if (curr_keycode == KC_I || curr_keycode == KC_E) {
         send_unicode_string(KUDLIT_I);
       } else if (curr_keycode == KC_U || curr_keycode == KC_O) {
         send_unicode_string(KUDLIT_U);
       }
-      // KC_A emits nothing
-    }
-    // Consonant
-    else if (curr_cons) {
+    } else if (curr_cons) {
       strncpy(buf, baybayin_ptr, 3);
       send_unicode_string(buf);
       send_unicode_string(PAMUDPOD);
-    }
-    // Vowel not after consonant
-    else {
+    } else { // vowel not following a consonant
       strncpy(buf, baybayin_ptr, 3);
       send_unicode_string(buf);
     }
