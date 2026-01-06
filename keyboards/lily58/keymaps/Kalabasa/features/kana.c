@@ -69,10 +69,72 @@ static uint16_t prev_keycode = 0;
 static uint16_t preprev_keycode = 0;
 static uint16_t prev_key_timer;
 
-static bool match(char* seq) {
+typedef struct {
+  uint8_t backspaces;
+  uint8_t letter_kc;
+  uint8_t vowel_kc;
+  uint8_t youon_kc;
+} syllable_t;
+
+static bool match(const char* seq) {
   return preprev_keycode - KC_A == seq[0] - 'a'
     && prev_keycode - KC_A == seq[1] - 'a'
     && curr_keycode - KC_A == seq[2] - 'a';
+}
+
+// called when prev_keycode is consonant and curr_keycode is a vowel
+// returns the identified syllable
+syllable_t process_syllable(void) {
+  bool preprev_cons = is_consonant(preprev_keycode);
+  syllable_t result;
+
+  if (preprev_cons) {
+    if (match("shi")) {
+      result.backspaces = 2;
+      result.letter_kc = KC_S;
+      result.vowel_kc = curr_keycode;
+      result.youon_kc = 0;
+      return result;
+    } else if (match("chi") || match("tsu")) {
+      result.backspaces = 2;
+      result.letter_kc = KC_T;
+      result.vowel_kc = curr_keycode;
+      result.youon_kc = 0;
+      return result;
+    } else if (match("dzu")) {
+      result.backspaces = 2;
+      result.letter_kc = KC_D;
+      result.vowel_kc = curr_keycode;
+      result.youon_kc = 0;
+      return result;
+    }
+  }
+
+  bool youon_vowel = curr_keycode == KC_A || curr_keycode == KC_U || curr_keycode == KC_O;
+  if (prev_keycode == KC_J && youon_vowel) {
+    result.backspaces = 1;
+    result.letter_kc = KC_J;
+    result.vowel_kc = KC_I;
+    result.youon_kc = curr_keycode;
+    return result;
+  }
+
+  if (
+    (preprev_cons && prev_keycode == KC_Y && youon_vowel)
+    || ((preprev_keycode == KC_S || preprev_keycode == KC_C) && prev_keycode == KC_H && youon_vowel)
+  ) {
+    result.backspaces = 2;
+    result.letter_kc = preprev_keycode == KC_C ? KC_T : preprev_keycode;
+    result.vowel_kc = KC_I;
+    result.youon_kc = curr_keycode;
+    return result;
+  }
+
+  result.backspaces = 1;
+  result.letter_kc = prev_keycode; // must be consonant
+  result.vowel_kc = curr_keycode; // must be vowel
+  result.youon_kc = 0;
+  return result;
 }
 
 bool process_kana(uint16_t keycode, keyrecord_t *record) {
@@ -81,8 +143,8 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
 
   if (
     !record->event.pressed
-    || !(curr_keycode >= KC_A && curr_keycode <= KC_Z)
     || get_mods()
+    || !(curr_keycode >= KC_A && curr_keycode <= KC_Z && HIRAGANA[curr_keycode - KC_A])
   ) {
     if (record->event.pressed) {
       prev_keycode = preprev_keycode = 0;
@@ -93,66 +155,35 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
   if (prev_keycode && timer_elapsed(prev_key_timer) > 2000) {
     prev_keycode = preprev_keycode = 0;
   }
-  
+
+  bool curr_cons = is_consonant(curr_keycode);
+  bool prev_cons = is_consonant(prev_keycode);
+
   if (record->event.pressed) {
-    // the original letter is always sent for any other uses
-    tap_code(curr_keycode);
-    
-    if (HIRAGANA[curr_keycode - KC_A]) {
-      if (is_consonant(curr_keycode)) {
-        if (curr_keycode == KC_N) {
-          tap_code(KC_BACKSPACE); // delete 'n'
-          send_unicode_string("ん");
-        } else if (curr_keycode == prev_keycode) {
-          tap_code(KC_BACKSPACE); // delete repeated letter
-          tap_code(KC_BACKSPACE);
-          send_unicode_string("っ");
-          tap_code(curr_keycode);
-        }
-      } else { // curr_keycode is vowel
-        if (is_consonant(prev_keycode)) {
-          int backspaces = 2;
-          int letter_idx = prev_keycode - KC_A;
-          int offset = vowel_offset(curr_keycode);
-          char* extra = NULL;
-          
-          // Hepburn support
-          if (match("shi")) {
-            backspaces = 3;
-            letter_idx = KC_S - KC_A;
-          } else if (match("chi") || match("tsu")) {
-            backspaces = 3;
-            letter_idx = KC_T - KC_A;
-          } else if (match("dzu")) {
-            backspaces = 3;
-            letter_idx = KC_D - KC_A;
-          } else if (
-            (curr_keycode == KC_A || curr_keycode == KC_U || curr_keycode == KC_O)
-            && (
-              (prev_keycode == KC_Y && is_consonant(preprev_keycode))
-              || (prev_keycode == KC_H && (preprev_keycode == KC_S || preprev_keycode == KC_C))
-              || prev_keycode == KC_J
-            )
-          ) {
-            backspaces = prev_keycode == KC_J ? 2 : 3;
-            letter_idx = (prev_keycode == KC_J ? KC_J : (preprev_keycode == KC_C ? KC_T : preprev_keycode)) - KC_A;
-            offset = vowel_offset(KC_I);
-            switch (curr_keycode) {
-              case KC_A: extra = "ゃ"; break;
-              case KC_U: extra = "ゅ"; break;
-              case KC_O: extra = "ょ"; break;
-            }
-          }
-          
-          while (backspaces-- > 0) tap_code(KC_BACKSPACE);
-          strncpy(buf, HIRAGANA[letter_idx] + offset, 3);
-          send_unicode_string(buf);
-          if (extra) send_unicode_string(extra);
-        } else { // prev_keycode is vowel
-          tap_code(KC_BACKSPACE); // delete vowel letter
-          strncpy(buf, HIRAGANA[curr_keycode - KC_A], 3);
-          send_unicode_string(buf);
-        }
+    if (curr_keycode == KC_N) {
+      send_unicode_string("ん");
+    } else if (curr_cons && curr_keycode == prev_keycode) {
+      tap_code(KC_BACKSPACE); // delete repeated consonant
+      send_unicode_string("っ");
+      tap_code(curr_keycode);
+    } else if (curr_cons) {
+      // start of a syllable
+      // send roman letter for immediate feedback, delete later
+      tap_code(curr_keycode);
+    } else if (!prev_cons) {
+      // independent vowel
+      strncpy(buf, HIRAGANA[curr_keycode - KC_A], 3);
+      send_unicode_string(buf);
+    } else { // prev_cons && curr_vowel
+      // end of a syllable
+      syllable_t syllable = process_syllable();
+      while (syllable.backspaces-- > 0) tap_code(KC_BACKSPACE);
+      strncpy(buf, HIRAGANA[syllable.letter_kc - KC_A] + vowel_offset(syllable.vowel_kc), 3);
+      send_unicode_string(buf);
+      switch (syllable.youon_kc) {
+        case KC_A: send_unicode_string("ゃ"); break;
+        case KC_U: send_unicode_string("ゅ"); break;
+        case KC_O: send_unicode_string("ょ"); break;
       }
     }
 

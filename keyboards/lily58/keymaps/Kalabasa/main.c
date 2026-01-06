@@ -71,7 +71,7 @@ uint16_t get_emoji_picker_hotkey(void);
 void (*get_record_func(keyrecord_t *record))(uint16_t);
 void update_layer_ind(layer_state_t state);
 void update_mode_ind(layer_state_t state);
-void show_toast(char* message, int time);
+void show_toast(const char* message, int time);
 
 
 void keyboard_post_init_user(void) {
@@ -369,7 +369,7 @@ static char mode_ind[] = {
   0xD0, 0xD1, 0xD2, 0xD3, 0,
 };
 
-static char* toast_msg = 0;
+static const char* toast_msg = 0;
 static int toast_timer = 0;
 static int led_timer = 0;
 
@@ -418,7 +418,7 @@ void update_mode_ind(layer_state_t state) {
   }
 }
 
-void show_toast(char* message, int time) {
+void show_toast(const char* message, int time) {
   toast_msg = message;
   toast_timer = time;
 }
@@ -438,7 +438,7 @@ void render_os(void) {
   oled_write_char(0xd4 + offset, false);
 }
 
-void render_indicator(char* data) {
+void render_indicator(const char* data) {
   oled_set_cursor(1, 6);
   oled_write(data, false);
   oled_set_cursor(1, 7);
