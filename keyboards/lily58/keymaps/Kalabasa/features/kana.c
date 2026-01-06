@@ -2,7 +2,7 @@
 
 // A-Z mapped to kana in UTF-8. Every row is one Roman letter.
 // Since all chars are in range U+3040..U+30FF, the UTF-8 encoding of every char is always 3 bytes.
-static char* HIRAGANA[] = {
+static char HIRAGANA[26][5*3] = {
   // A I U E O
   "あああああ", // A'
   "ばびぶべぼ", // B
@@ -20,14 +20,14 @@ static char* HIRAGANA[] = {
   "なにぬねの", // N
   "おおおおお", // O'
   "ぱぴぷぺぽ", // P
-  NULL,         // Q
+  "かきくけこ", // Q*
   "らりるれろ", // R
   "さしすせそ", // S
   "たちつてと", // T
   "ううううう", // U'
   "ゔゔゔゔゔ", // V*
   "わゐゑうう", // W*
-  NULL,         // X
+  "かきくけこ", // X*
   "やいゆえよ", // Y*
   "ざじずぜぞ"  // Z
 };
@@ -82,7 +82,7 @@ static bool match(const char* seq) {
     && curr_keycode - KC_A == seq[2] - 'a';
 }
 
-// called when prev_keycode is consonant and curr_keycode is a vowel
+// called when prev_keycode is a consonant and curr_keycode is a vowel
 // returns the identified syllable
 syllable_t process_syllable(void) {
   bool preprev_cons = is_consonant(preprev_keycode);
@@ -141,10 +141,13 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
   static char buf[4] = "\0\0\0\0";
   curr_keycode = QK_MODS_GET_BASIC_KEYCODE(keycode);
 
+  bool consume = (curr_keycode >= KC_A && curr_keycode <= KC_Z)
+              || (prev_keycode == KC_N && curr_keycode == KC_QUOTE);
+
   if (
     !record->event.pressed
     || get_mods()
-    || !(curr_keycode >= KC_A && curr_keycode <= KC_Z && HIRAGANA[curr_keycode - KC_A])
+    || !consume
   ) {
     if (record->event.pressed) {
       prev_keycode = preprev_keycode = 0;
@@ -162,6 +165,8 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
   if (record->event.pressed) {
     if (curr_keycode == KC_N) {
       send_unicode_string("ん");
+    } else if (curr_keycode == KC_QUOTE) {
+      prev_keycode = preprev_keycode = 0;
     } else if (curr_cons && curr_keycode == prev_keycode) {
       tap_code(KC_BACKSPACE); // delete repeated consonant
       send_unicode_string("っ");
@@ -172,13 +177,15 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
       tap_code(curr_keycode);
     } else if (!prev_cons) {
       // independent vowel
-      strncpy(buf, HIRAGANA[curr_keycode - KC_A], 3);
+      strncpy(buf, &HIRAGANA[curr_keycode - KC_A][0], 3);
       send_unicode_string(buf);
     } else { // prev_cons && curr_vowel
       // end of a syllable
       syllable_t syllable = process_syllable();
       while (syllable.backspaces-- > 0) tap_code(KC_BACKSPACE);
-      strncpy(buf, HIRAGANA[syllable.letter_kc - KC_A] + vowel_offset(syllable.vowel_kc), 3);
+      char* kana_ptr = &HIRAGANA[syllable.letter_kc - KC_A][vowel_offset(syllable.vowel_kc)];
+      // every possible kana character is 3 bytes long (utf-8)
+      strncpy(buf, kana_ptr, 3);
       send_unicode_string(buf);
       switch (syllable.youon_kc) {
         case KC_A: send_unicode_string("ゃ"); break;
