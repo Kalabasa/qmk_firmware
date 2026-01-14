@@ -29,35 +29,27 @@ static char MAP[28][5*3] = {
   "ううううう", // U (vowel)
   "捨捨ゔ捨捨", // V
   "わ捨う捨捨", // W
-  "かきくけこ", // X (invalid)
+  "ぁぃぅぇぉ", // X (small vowels)
   "やいゆえよ", // Y
   "ざじずぜぞ", // Z
   // Extra mappings
   "ゃぃゅぇょ", // youon
-  "ぁぃぅぇぉ", // small vowels
 };
 
+const char* YOUON_PTR = &MAP[26][0];
+const char* SMALL_PTR = &MAP[23][0];
+
 static bool is_consonant(uint16_t keycode) {
-  return keycode == KC_B
-    || keycode == KC_C
-    || keycode == KC_D
-    || keycode == KC_F
-    || keycode == KC_G
-    || keycode == KC_H
-    || keycode == KC_J
-    || keycode == KC_K
-    || keycode == KC_L
-    || keycode == KC_M
-    || keycode == KC_N
-    || keycode == KC_P
-    || keycode == KC_Q
-    || keycode == KC_R
-    || keycode == KC_S
-    || keycode == KC_T
-    || keycode == KC_V
-    || keycode == KC_W
-    || keycode == KC_Y
-    || keycode == KC_Z;
+  int row = keycode - KC_A;
+  if (row < 0 || row > KC_Z - KC_A) return false;
+  // vowels have the same char for all columns
+  char byte1 = MAP[row][1];
+  char byte2 = MAP[row][2];
+  for (int i = 3; i < 15; i += 3) {
+    if (byte1 != MAP[row][i + 1] || byte2 != MAP[row][i + 2]) return true;
+  }
+
+  return false;
 }
 
 static int vowel_offset(uint16_t keycode) {
@@ -95,9 +87,6 @@ static uint16_t curr_keycode = 0;
 static uint16_t prev_keycode = 0;
 static uint16_t preprev_keycode = 0;
 static uint16_t prev_key_timer;
-
-const char* YOUON_PTR = &MAP[26][0];
-const char* SMALL_PTR = &MAP[27][0];
 
 typedef struct {
   uint8_t backspaces;
