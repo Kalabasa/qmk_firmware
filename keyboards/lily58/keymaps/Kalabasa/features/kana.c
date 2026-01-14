@@ -1,15 +1,34 @@
 #include "kana.h"
 
-// A-Z mapped to kana in UTF-8. Every row is one Roman letter. Columns are vowels.
-// Since all chars are in range U+3040..U+30FF, the UTF-8 encoding of every char is always 3 bytes.
-// 拗 (0xE6 0x8B 0x97) indicates youon (never in the I column)
-// 捨 (0xE6 0x8D 0xA8) indicates additional small vowel (never in the U column)
-static char MAP[28][5*3] = {
+enum {
+  ROW_EXTRA_YOUON = 26,
+  ROW_EXTRA_CH,
+  ROW_EXTRA_SH,
+  ROW_COUNT
+};
+
+// A-Z mapped to kana in UTF-8.
+//
+// It's a 2D map:
+//   1. Rows map to one Roman letter in ASCII order.
+//   2. Columns map to vowels A, I, U, E, O, in that order.
+//   3. Thus, a syllable is a row-column pair.
+//
+// Every char takes up exactly 3 bytes (due to UTF-8 encoding of chars in this range U+3040..U+30FF).
+// Thus it's possible address any syllable by its letter-vowel pair.
+// - MAP[letter_idx][vowel_idx * 3]
+//
+// Special cases:
+// - Vowels are the same for all columns
+// - XA, XI, XU, XE, XO are mapped to small vowel kana
+// - 拗 (0xE6 0x8B 0x97) indicates youon (never in the I column)
+// - 捨 (0xE6 0x8D 0xA8) indicates additional small vowel must be used
+static char MAP[ROW_COUNT][5*3] = {
   // A I U E O
   "あああああ", // A (vowel)
   "ばびぶべぼ", // B
   "拗ち拗捨拗", // C
-  "だぢづでど", // D
+  "だ捨づでど", // D
   "えええええ", // E (vowel)
   "捨捨ふ捨捨", // F
   "がぎぐげご", // G
@@ -25,19 +44,19 @@ static char MAP[28][5*3] = {
   "捨捨く捨捨", // Q
   "らりるれろ", // R
   "さしすせそ", // S
-  "たちつてと", // T
+  "た捨つてと", // T
   "ううううう", // U (vowel)
   "捨捨ゔ捨捨", // V
   "わ捨う捨捨", // W
   "ぁぃぅぇぉ", // X (small vowels)
   "やいゆえよ", // Y
   "ざじずぜぞ", // Z
-  // Extra mappings
-  "ゃぃゅぇょ", // youon
+  [ROW_EXTRA_YOUON] = "ゃぃゅぇょ",
+  [ROW_EXTRA_CH]    = "拗ち拗捨拗",
+  [ROW_EXTRA_SH]    = "拗し拗捨拗",
 };
 
-const char* YOUON_PTR = &MAP[26][0];
-const char* SMALL_PTR = &MAP[23][0];
+const unsigned int ROW_SMALL_VOWELS = 'x' - 'a';
 
 static bool is_consonant(uint16_t keycode) {
   int row = keycode - KC_A;
@@ -64,23 +83,32 @@ static int vowel_offset(uint16_t keycode) {
 }
 
 static bool is_youon(uint16_t consonant_keycode, uint16_t vowel_keycode) {
-  // 拗 = 0xE6 0x8B 0x97
-  // Check if second byte is 8B
-  return MAP[consonant_keycode - KC_A][vowel_offset(vowel_keycode) + 1] == 0x8B;
+  // The actual rules are encoded in the MAP via special value 拗.
+  return strncmp("拗", &MAP[consonant_keycode - KC_A][vowel_offset(vowel_keycode)], 3) == 0;
 }
 
 static bool is_small_vowel(uint16_t consonant_keycode, uint16_t vowel_keycode) {
-  // 捨 = 0xE6 0x8D 0xA8
-  // Check if second byte is 8D
-  return MAP[consonant_keycode - KC_A][vowel_offset(vowel_keycode) + 1] == 0x8D;
+  // The actual rules are encoded in the MAP via special value 捨.
+  return strncmp("捨", &MAP[consonant_keycode - KC_A][vowel_offset(vowel_keycode)], 3) == 0;
 }
 
-static bool is_sibiliant(uint16_t keycode) {
-  return keycode == KC_C
-    || keycode == KC_J
-    || keycode == KC_S
-    || keycode == KC_T
-    || keycode == KC_Z;
+// This determines which vowel ending (-I vs -U) will be used for the base syllable when using small vowels
+// e.g.
+//   ちぇ uses -I as in [TI + smallE]
+//   ふぁ uses -U as in [FU + smallA]
+// Returns KC_I or KC_U
+static uint16_t get_base_vowel(uint16_t consonant_keycode, uint16_t vowel_keycode) {
+  // The actual rules are encoded in the MAP:
+  // In any row containing syllables that require small vowels,
+  // the syllable that doesn't require a small vowel is the base vowel.
+  for (const uint16_t* p = (uint16_t[]){ KC_I, KC_E, KC_U, KC_O, KC_A }; *p != KC_A; p++) {
+    char* kana_ptr = &MAP[consonant_keycode - KC_A][vowel_offset(*p)];
+    if (strncmp("拗", kana_ptr, 3) != 0 && strncmp("捨", kana_ptr, 3) != 0) {
+      return *p;
+    }
+  }
+  // Not expected if MAP is set up correctly
+  return 0;
 }
 
 static uint16_t curr_keycode = 0;
@@ -106,70 +134,87 @@ static bool match(const char* seq) {
 syllable_t process_syllable(void) {
   bool preprev_cons = is_consonant(preprev_keycode);
   syllable_t result;
+  result.backspaces = 0;
 
+  // three-letter combinations
   if (preprev_cons) {
     if (match("shi")) { // し
-      result.backspaces = 2;
+      result.backspaces += 2;
       result.consonant_kc = KC_S;
       result.vowel_kc = curr_keycode;
       result.extra_char_ptr = NULL;
       return result;
     } else if (match("chi") || match("tsu")) { // ち,つ
-      result.backspaces = 2;
+      result.backspaces += 2;
       result.consonant_kc = KC_T;
       result.vowel_kc = curr_keycode;
       result.extra_char_ptr = NULL;
       return result;
     } else if (match("dzu")) { // づ
-      result.backspaces = 2;
+      result.backspaces += 2;
       result.consonant_kc = KC_D;
       result.vowel_kc = curr_keycode;
       result.extra_char_ptr = NULL;
       return result;
     }
-  }
 
-  // CCV => きゃ,きゅ,きょ,...
-  bool youon_vowel = curr_keycode == KC_A || curr_keycode == KC_U || curr_keycode == KC_O;
-  if (
-    (preprev_cons && prev_keycode == KC_Y && youon_vowel)
-    || ((preprev_keycode == KC_S || preprev_keycode == KC_C) && prev_keycode == KC_H && youon_vowel)
-  ) {
-    result.backspaces = 2;
-    result.consonant_kc = preprev_keycode == KC_C ? KC_T : preprev_keycode;
-    result.vowel_kc = KC_I;
-    result.extra_char_ptr = YOUON_PTR + vowel_offset(curr_keycode);
-    return result;
+    // にゃ,にゅ,きょ,...
+    bool youon_vowel = curr_keycode == KC_A || curr_keycode == KC_U || curr_keycode == KC_O;
+    if (preprev_cons && prev_keycode == KC_Y && youon_vowel) {
+      result.backspaces += 2;
+      result.consonant_kc = preprev_keycode;
+      result.vowel_kc = KC_I;
+      result.extra_char_ptr = &MAP[ROW_EXTRA_YOUON][vowel_offset(curr_keycode)];
+      return result;
+    }
+
+    // Map C+H and S+H to the CH/SH rows in the map
+    if (preprev_keycode == KC_C && prev_keycode == KC_H) {
+      result.backspaces += 1;
+      preprev_keycode = 0;
+      // not a 'keycode' anymore, just an index 
+      prev_keycode = KC_A + ROW_EXTRA_CH;
+    } else if (preprev_keycode == KC_S && prev_keycode == KC_H) {
+      result.backspaces += 1;
+      preprev_keycode = 0;
+      prev_keycode = KC_A + ROW_EXTRA_SH;
+    }
   }
 
   // じゃ,じゅ,じょ
   if (is_youon(prev_keycode, curr_keycode)) {
-    result.backspaces = 1;
+    result.backspaces += 1;
     result.consonant_kc = prev_keycode;
     result.vowel_kc = KC_I;
-    result.extra_char_ptr = YOUON_PTR + vowel_offset(curr_keycode);
+    result.extra_char_ptr = &MAP[ROW_EXTRA_YOUON][vowel_offset(curr_keycode)];
     return result;
   }
 
   // ファ,ヴァ,ジェ,...
   if (is_small_vowel(prev_keycode, curr_keycode)) {
-    result.backspaces = 1;
+    result.backspaces += 1;
     result.consonant_kc = prev_keycode;
-    result.vowel_kc = is_sibiliant(prev_keycode) ? KC_I : KC_U;
-    result.extra_char_ptr = SMALL_PTR + vowel_offset(curr_keycode);
+    result.vowel_kc = get_base_vowel(prev_keycode, curr_keycode);
+    result.extra_char_ptr = &MAP[ROW_SMALL_VOWELS][vowel_offset(curr_keycode)];
     return result;
   }
 
   // a regular syllable
-  result.backspaces = 1;
+  result.backspaces += 1;
   result.consonant_kc = prev_keycode; // must be consonant
   result.vowel_kc = curr_keycode; // must be vowel
   result.extra_char_ptr = NULL;
   return result;
 }
 
-bool process_kana(uint16_t keycode, keyrecord_t *record) {
+// Send 3 bytes of UTF-8 encoded kana character
+void send_kana_unicode(const char* kana_ptr) {
   static char buf[4] = "\0\0\0\0";
+  strncpy(buf, kana_ptr, 3);
+  send_unicode_string(buf);
+}
+
+bool process_kana(uint16_t keycode, keyrecord_t *record) {
   curr_keycode = QK_MODS_GET_BASIC_KEYCODE(keycode);
 
   bool consume = (curr_keycode >= KC_A && curr_keycode <= KC_Z)
@@ -208,22 +253,17 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
       tap_code(curr_keycode);
     } else if (!prev_cons) {
       // independent vowel
-      strncpy(buf, &MAP[curr_keycode - KC_A][0], 3);
-      send_unicode_string(buf);
+      send_kana_unicode(&MAP[curr_keycode - KC_A][0]);
     } else { // prev_cons && curr_vowel
       // end of a syllable
       syllable_t syllable = process_syllable();
 
       while (syllable.backspaces-- > 0) tap_code(KC_BACKSPACE);
 
-      char* kana_char_ptr = &MAP[syllable.consonant_kc - KC_A][vowel_offset(syllable.vowel_kc)];
-      // every possible kana character is 3 bytes long (utf-8)
-      strncpy(buf, kana_char_ptr, 3);
-      send_unicode_string(buf);
+      send_kana_unicode(&MAP[syllable.consonant_kc - KC_A][vowel_offset(syllable.vowel_kc)]);
 
       if (syllable.extra_char_ptr) {
-        strncpy(buf, syllable.extra_char_ptr, 3);
-        send_unicode_string(buf);
+        send_kana_unicode(syllable.extra_char_ptr);
       }
     }
 
