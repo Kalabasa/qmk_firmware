@@ -9,7 +9,7 @@ enum {
 
 // A-Z mapped to kana in UTF-8.
 //
-// It's a 2D map:
+// Since kana is a syllabary, it's a 2D map:
 //   1. Rows map to one Roman letter in ASCII order.
 //   2. Columns map to vowels A, I, U, E, O, in that order.
 //   3. Thus, a syllable is a row-column pair.
