@@ -1,7 +1,7 @@
 #include "kana.h"
 
 enum {
-  ROW_EXTRA_YOUON = 26,
+  ROW_EXTRA_YOUON = 'z' - 'a' + 1,
   ROW_EXTRA_CH,
   ROW_EXTRA_SH,
   ROW_COUNT
@@ -111,6 +111,20 @@ static uint16_t get_base_vowel(uint16_t consonant_keycode, uint16_t vowel_keycod
   return 0;
 }
 
+// convert a UTF-8 encoded hiragana character to katakana in-place
+static void to_katakana(char* kana) {
+  if (strncmp(kana, "ぁ", 3) < 0 || strncmp(kana, "ゔ", 3) > 0) {
+    return;
+  }
+
+  // decode utf8 to unicode code point
+  // ignoring the first byte, it's always 0xE3
+  uint32_t codepoint = ((kana[1] & 0b00111111) << 6) | (kana[2] & 0b00111111);
+  codepoint += (uint32_t)L'ア' - (uint32_t)L'あ';
+  kana[1] = 0x80 | ((codepoint >> 6) & 0b00111111);
+  kana[2] = 0x80 | (codepoint & 0b00111111);
+}
+
 static uint16_t curr_keycode = 0;
 static uint16_t prev_keycode = 0;
 static uint16_t preprev_keycode = 0;
@@ -211,6 +225,9 @@ syllable_t process_syllable(void) {
 void send_kana_unicode(const char* kana_ptr) {
   static char buf[4] = "\0\0\0\0";
   strncpy(buf, kana_ptr, 3);
+  if (get_mods() & MOD_MASK_SHIFT) {
+    to_katakana(buf);
+  }
   send_unicode_string(buf);
 }
 
@@ -222,7 +239,7 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
 
   if (
     !record->event.pressed
-    || get_mods()
+    || (get_mods() & ~MOD_MASK_SHIFT)
     || !consume
   ) {
     if (record->event.pressed) {
