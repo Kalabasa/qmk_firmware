@@ -47,7 +47,7 @@ static char MAP[ROW_COUNT][5*3] = {
   "た捨つてと", // T
   "ううううう", // U (vowel)
   "捨捨ゔ捨捨", // V
-  "わ捨う捨捨", // W
+  "わ捨う捨を", // W
   "ぁぃぅぇぉ", // X (small vowels)
   "やいゆえよ", // Y
   "ざじずぜぞ", // Z
@@ -95,7 +95,7 @@ static bool is_small_vowel(uint16_t consonant_keycode, uint16_t vowel_keycode) {
 // This determines which vowel ending (-I vs -U) will be used for the base syllable when using small vowels
 // e.g.
 //   ちぇ uses -I as in [TI + smallE]
-//   ふぁ uses -U as in [FU + smallA]
+//   フェ uses -U as in [FU + smallE]
 // Returns KC_I or KC_U
 static uint16_t get_base_vowel(uint16_t consonant_keycode, uint16_t vowel_keycode) {
   // The actual rules are encoded in the MAP:
@@ -117,10 +117,11 @@ static void to_katakana(char* kana) {
     return;
   }
 
-  // decode utf8 to unicode code point
-  // ignoring the first byte, it's always 0xE3
+  // decode utf8 to unicode code point (ignoring the first byte as it's always 0xE3)
   uint32_t codepoint = ((kana[1] & 0b00111111) << 6) | (kana[2] & 0b00111111);
+  // hiragana to katakana offset
   codepoint += (uint32_t)L'ア' - (uint32_t)L'あ';
+  // encode back to utf8 (ignoring the first byte, should be unchanged)
   kana[1] = 0x80 | ((codepoint >> 6) & 0b00111111);
   kana[2] = 0x80 | (codepoint & 0b00111111);
 }
@@ -152,13 +153,7 @@ syllable_t process_syllable(void) {
 
   // three-letter combinations
   if (preprev_cons) {
-    if (match("shi")) { // し
-      result.backspaces += 2;
-      result.consonant_kc = KC_S;
-      result.vowel_kc = curr_keycode;
-      result.extra_char_ptr = NULL;
-      return result;
-    } else if (match("chi") || match("tsu")) { // ち,つ
+    if (match("tsu")) { // つ
       result.backspaces += 2;
       result.consonant_kc = KC_T;
       result.vowel_kc = curr_keycode;
@@ -172,7 +167,7 @@ syllable_t process_syllable(void) {
       return result;
     }
 
-    // にゃ,にゅ,きょ,...
+    // ひゃ,にゅ,きょ,...
     bool youon_vowel = curr_keycode == KC_A || curr_keycode == KC_U || curr_keycode == KC_O;
     if (preprev_cons && prev_keycode == KC_Y && youon_vowel) {
       result.backspaces += 2;
@@ -235,7 +230,8 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
   curr_keycode = QK_MODS_GET_BASIC_KEYCODE(keycode);
 
   bool consume = (curr_keycode >= KC_A && curr_keycode <= KC_Z)
-              || (prev_keycode == KC_N && curr_keycode == KC_QUOTE);
+              || (prev_keycode == KC_N && curr_keycode == KC_QUOTE)
+              || (get_mods() & MOD_MASK_SHIFT && curr_keycode == KC_MINUS);
 
   if (
     !record->event.pressed
@@ -256,13 +252,15 @@ bool process_kana(uint16_t keycode, keyrecord_t *record) {
   bool prev_cons = is_consonant(prev_keycode);
 
   if (record->event.pressed) {
-    if (curr_keycode == KC_N) {
-      send_unicode_string("ん");
+    if (curr_keycode == KC_MINUS) {
+      send_unicode_string("ー");
+    } else if (curr_keycode == KC_N) {
+      send_kana_unicode("ん");
     } else if (curr_keycode == KC_QUOTE) {
       prev_keycode = preprev_keycode = 0;
     } else if (curr_cons && curr_keycode == prev_keycode) {
       tap_code(KC_BACKSPACE); // delete repeated consonant
-      send_unicode_string("っ");
+      send_kana_unicode("っ");
       tap_code(curr_keycode);
     } else if (curr_cons) {
       // start of a syllable
