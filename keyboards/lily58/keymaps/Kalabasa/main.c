@@ -146,7 +146,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         set_unicode_input_mode(UNICODE_MODE_LINUX);
       }
       return true;
-    case CG_SWAP: // GUI as primary modifier (macOS)
+    case CG_LSWP: // GUI as primary modifier (macOS)
       if (record->event.pressed) {
         os = OS_MACOS;
         set_unicode_input_mode(UNICODE_MODE_MACOS);
