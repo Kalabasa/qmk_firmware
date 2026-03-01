@@ -21,39 +21,39 @@ enum {
 // Special cases:
 // - Vowels are the same for all columns
 // - XA, XI, XU, XE, XO are mapped to small vowel kana
-// - 拗 (0xE6 0x8B 0x97) indicates youon (never in the I column)
-// - 捨 (0xE6 0x8D 0xA8) indicates additional small vowel must be used
+// - Ｙ indicates youon (never in the I column)
+// - Ｓ indicates additional small vowel must be used
 static char MAP[ROW_COUNT][5*3] = {
   // A I U E O
   "あああああ", // A (vowel)
   "ばびぶべぼ", // B
-  "拗ち拗捨拗", // C
-  "だ捨づでど", // D
+  "ＹちＹＳＹ", // C
+  "だＳづでど", // D
   "えええええ", // E (vowel)
-  "捨捨ふ捨捨", // F
+  "ＳＳふＳＳ", // F
   "がぎぐげご", // G
   "はひふへほ", // H
   "いいいいい", // I (vowel)
-  "拗じ拗捨拗", // J
+  "ＹじＹＳＹ", // J
   "かきくけこ", // K
   "らりるれろ", // L
   "まみむめも", // M
   "なにぬねの", // N
   "おおおおお", // O (vowel)
   "ぱぴぷぺぽ", // P
-  "捨捨く捨捨", // Q
+  "ＳＳくＳＳ", // Q
   "らりるれろ", // R
   "さしすせそ", // S
-  "た捨つてと", // T
+  "たＳつてと", // T
   "ううううう", // U (vowel)
-  "捨捨ゔ捨捨", // V
-  "わ捨う捨を", // W
+  "ＳＳゔＳＳ", // V
+  "わＳうＳを", // W
   "ぁぃぅぇぉ", // X (small vowels)
   "やいゆえよ", // Y
   "ざじずぜぞ", // Z
-  [ROW_EXTRA_YOUON] = "ゃぃゅぇょ",
-  [ROW_EXTRA_CH]    = "拗ち拗捨拗",
-  [ROW_EXTRA_SH]    = "拗し拗捨拗",
+  [ROW_EXTRA_YOUON] = "ゃ　ゅ　ょ",
+  [ROW_EXTRA_CH]    = "ＹちＹＳＹ",
+  [ROW_EXTRA_SH]    = "ＹしＹＳＹ",
 };
 
 const unsigned int ROW_SMALL_VOWELS = 'x' - 'a';
@@ -83,13 +83,13 @@ static int vowel_offset(uint16_t keycode) {
 }
 
 static bool is_youon(uint16_t consonant_keycode, uint16_t vowel_keycode) {
-  // The actual rules are encoded in the MAP via special value 拗.
-  return strncmp("拗", &MAP[consonant_keycode - KC_A][vowel_offset(vowel_keycode)], 3) == 0;
+  // The actual rules are encoded in the MAP via special value Ｙ.
+  return strncmp("Ｙ", &MAP[consonant_keycode - KC_A][vowel_offset(vowel_keycode)], 3) == 0;
 }
 
 static bool is_small_vowel(uint16_t consonant_keycode, uint16_t vowel_keycode) {
-  // The actual rules are encoded in the MAP via special value 捨.
-  return strncmp("捨", &MAP[consonant_keycode - KC_A][vowel_offset(vowel_keycode)], 3) == 0;
+  // The actual rules are encoded in the MAP via special value Ｓ.
+  return strncmp("Ｓ", &MAP[consonant_keycode - KC_A][vowel_offset(vowel_keycode)], 3) == 0;
 }
 
 // This determines which vowel ending (-I vs -U) will be used for the base syllable when using small vowels
@@ -103,7 +103,7 @@ static uint16_t get_base_vowel(uint16_t consonant_keycode, uint16_t vowel_keycod
   // the syllable that doesn't require a small vowel is the base vowel.
   for (const uint16_t* p = (uint16_t[]){ KC_I, KC_E, KC_U, KC_O, KC_A }; *p != KC_A; p++) {
     char* kana_ptr = &MAP[consonant_keycode - KC_A][vowel_offset(*p)];
-    if (strncmp("拗", kana_ptr, 3) != 0 && strncmp("捨", kana_ptr, 3) != 0) {
+    if (strncmp("Ｙ", kana_ptr, 3) != 0 && strncmp("Ｓ", kana_ptr, 3) != 0) {
       return *p;
     }
   }
@@ -168,8 +168,7 @@ syllable_t process_syllable(void) {
     }
 
     // ひゃ,にゅ,きょ,...
-    bool youon_vowel = curr_keycode == KC_A || curr_keycode == KC_U || curr_keycode == KC_O;
-    if (preprev_cons && prev_keycode == KC_Y && youon_vowel) {
+    if (preprev_cons && prev_keycode == KC_Y) {
       result.backspaces += 2;
       result.consonant_kc = preprev_keycode;
       result.vowel_kc = KC_I;
@@ -188,7 +187,7 @@ syllable_t process_syllable(void) {
       preprev_keycode = 0;
       prev_keycode = KC_A + ROW_EXTRA_SH;
     }
-  }
+  } // end three-letter combinations
 
   // じゃ,じゅ,じょ
   if (is_youon(prev_keycode, curr_keycode)) {
