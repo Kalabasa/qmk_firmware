@@ -82,8 +82,7 @@ void show_toast(const char* message, int time);
 
 void keyboard_post_init_user(void) {
   os = keymap_config.swap_lctl_lgui ? OS_MACOS : OS_LINUX;
-  strcpy(user_config.passwd, "test");
-  // eeconfig_read_user_datablock(&user_config);
+  eeconfig_read_user_datablock(&user_config, 0, sizeof(user_config));
 }
 
 bool process_detected_host_os_user(os_variant_t detected_os) {
@@ -106,8 +105,8 @@ bool process_detected_host_os_user(os_variant_t detected_os) {
 }
 
 void eeconfig_init_user(void) {
-  // strcpy(user_config.passwd, "test");
-  // eeconfig_update_user_datablock_field(user_config, passwd);
+  memset(&user_config, 0, sizeof(user_config));
+  eeconfig_update_user_datablock_field(user_config, passwd);
 }
 
 bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
@@ -133,18 +132,12 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (layer_state_is(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
   if (layer_state_is(LAYER_KANA) && !process_kana(keycode, record)) return false;
-  if (!process_passwd(keycode, record)) return false;
+  if (!process_passwd(keycode, record, user_config.passwd, 32, 4)) return false;
   if (!process_f_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);
 
   switch (keycode) {
-    // TESTING
-    case PASS:
-      if (record->event.pressed) {
-        send_string(user_config.passwd);
-      }
-      return true;
     /*
     Unshifted keys on layer 1
     */
