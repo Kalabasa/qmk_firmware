@@ -20,6 +20,11 @@
 
 extern keymap_config_t keymap_config;
 
+typedef struct user_eeconfig_t {
+  char passwd[128];
+} user_eeconfig_t;
+user_eeconfig_t user_config;
+
 const uint32_t PROGMEM unicode_map[] = {
   [EMO_Q] = U'😭',
   [EMO_W] = U'👋',
