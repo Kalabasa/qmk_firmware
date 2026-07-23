@@ -2,10 +2,15 @@
 
 typedef enum { OFF, CAPTURE, REPLAY } passwd_state_t;
 
-static char buffer[PASSWD_SLOT_SIZE];
-static uint8_t buffer_len = 0;
+typedef struct {
+  char letters[32];
+  uint8_t shift_bits[4];
+} passwd_slot_t;
 
-bool process_passwd(uint16_t keycode, keyrecord_t *record, char *data) {
+static passwd_slot_t buffer;
+static uint8_t buffer_letter_count = 0;
+
+bool process_passwd(uint16_t keycode, keyrecord_t *record, void *data) {
   static passwd_state_t state = OFF;
 
   if (keycode == passwd_toggle_key) {
@@ -20,10 +25,12 @@ bool process_passwd(uint16_t keycode, keyrecord_t *record, char *data) {
       return true;
     case CAPTURE:
     case REPLAY:
-      if (keycode == KC_ESCAPE) {
-        state = OFF;
-      } else if (keycode == KC_ENTER) {
-        state = OFF; 
+      if (record->event.pressed) {
+        if (keycode == KC_ESCAPE || keycode == KC_ENTER || buffer_letter_count >= sizeof(buffer.letters) - 1) {
+          buffer_letter_count = 0;
+          state = OFF;
+        } else {
+        }
       }
       return false;
   }

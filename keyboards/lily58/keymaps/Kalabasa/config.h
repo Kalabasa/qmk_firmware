@@ -39,4 +39,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #undef OLED_FONT_H
 #define OLED_FONT_H "keymaps/Kalabasa/font.c"
 
-#define EECONFIG_USER_DATA_SIZE 128
+#define EECONFIG_USER_DATA_SIZE 144
