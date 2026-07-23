@@ -23,4 +23,4 @@ MUSIC_ENABLE = no
 # Do not enable SLEEP_LED_ENABLE. it uses the same timer as BACKLIGHT_ENABLE
 SLEEP_LED_ENABLE = no    # Breathing sleep LED during USB suspend
 
-SRC += main.c features/baybayin.c features/bitwise_f.c features/kana.c
+SRC += main.c features/baybayin.c features/bitwise_f.c features/kana.c features/passwd.c
