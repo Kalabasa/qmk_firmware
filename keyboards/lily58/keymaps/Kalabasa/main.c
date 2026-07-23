@@ -65,6 +65,11 @@ static int bracket_state = 0;
 // 0: Inactive, 1: Active
 static int game_chat_state = 0;
 
+// Password manager config
+const uint16_t passwd_toggle_key = PASS;
+uint8_t PASSWD_SLOT_SIZE = 32;
+uint8_t PASSWD_SLOT_COUNT = 4;
+
 // Bitwise FXX input keys
 const uint16_t bitwise_f_keys[] = { F_B1, F_B2, F_B3, F_B4 };
 uint8_t NUM_BITWISE_F_KEYS = sizeof(bitwise_f_keys) / sizeof(uint16_t);
@@ -132,7 +137,7 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (layer_state_is(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
   if (layer_state_is(LAYER_KANA) && !process_kana(keycode, record)) return false;
-  if (!process_passwd(keycode, record, PASS, user_config.passwd, 32, 4)) return false;
+  if (!process_passwd(keycode, record, user_config.passwd)) return false;
   if (!process_f_keys(keycode, record)) return false;
 
   void (*record_func)(uint16_t) = get_record_func(record);

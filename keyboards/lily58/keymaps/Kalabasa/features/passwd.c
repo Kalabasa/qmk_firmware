@@ -2,10 +2,10 @@
 
 typedef enum { OFF, CAPTURE, REPLAY } passwd_state_t;
 
-bool process_passwd(uint16_t keycode, keyrecord_t *record, uint16_t toggle_key, char *data, uint8_t slot_size, uint8_t slot_count) {
+bool process_passwd(uint16_t keycode, keyrecord_t *record, char *data) {
   static passwd_state_t state = OFF;
 
-  if (keycode == toggle_key) {
+  if (keycode == passwd_toggle_key) {
     if (record->event.pressed) {
       state = (state + 1) % 3;
     }
@@ -24,4 +24,6 @@ bool process_passwd(uint16_t keycode, keyrecord_t *record, uint16_t toggle_key, 
       }
       return false;
   }
+
+  return true;
 }

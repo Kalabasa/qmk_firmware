@@ -1,4 +1,8 @@
 #pragma once
 #include "quantum.h"
 
-bool process_passwd(uint16_t keycode, keyrecord_t *record, uint16_t toggle_key, char *data, uint8_t slot_size, uint8_t slot_count);
+extern const uint16_t passwd_toggle_key;
+extern uint8_t PASSWD_SLOT_SIZE;
+extern uint8_t PASSWD_SLOT_COUNT;
+
+bool process_passwd(uint16_t keycode, keyrecord_t *record, char *data);
