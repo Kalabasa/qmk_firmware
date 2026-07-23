@@ -2,6 +2,9 @@
 
 typedef enum { OFF, CAPTURE, REPLAY } passwd_state_t;
 
+static char buffer[PASSWD_SLOT_SIZE];
+static uint8_t buffer_len = 0;
+
 bool process_passwd(uint16_t keycode, keyrecord_t *record, char *data) {
   static passwd_state_t state = OFF;
 

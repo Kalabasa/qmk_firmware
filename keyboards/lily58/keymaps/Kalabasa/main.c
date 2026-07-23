@@ -67,8 +67,6 @@ static int game_chat_state = 0;
 
 // Password manager config
 const uint16_t passwd_toggle_key = PASS;
-uint8_t PASSWD_SLOT_SIZE = 32;
-uint8_t PASSWD_SLOT_COUNT = 4;
 
 // Bitwise FXX input keys
 const uint16_t bitwise_f_keys[] = { F_B1, F_B2, F_B3, F_B4 };
