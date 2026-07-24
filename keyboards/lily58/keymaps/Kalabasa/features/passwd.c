@@ -14,6 +14,15 @@ static void derive_key(const uint8_t *typed, uint8_t len, uint8_t *key) {
   memcpy(key, typed, len);
 }
 
+static uint8_t derive_slot(const uint8_t *typed, uint8_t len) {
+  uint32_t hash = 2166136261u;
+  for (uint8_t i = 0; i < len; i++) {
+    hash ^= typed[i];
+    hash *= 16777619u;
+  }
+  return hash % PASSWD_SLOT_COUNT;
+}
+
 static void replay_password(uint8_t *cipher) {
   uint8_t key[PASSWD_SLOT_SIZE];
   derive_key(passphrase, passphrase_len, key);

@@ -1,7 +1,7 @@
 #pragma once
 #include "quantum.h"
 
-#define PASSWD_SLOT_SIZE 40
+#define PASSWD_SLOT_SIZE 64
 #define PASSWD_SLOT_COUNT 2
 
 extern const uint16_t passwd_toggle_key;

@@ -21,7 +21,7 @@
 extern keymap_config_t keymap_config;
 
 typedef struct {
-  uint8_t ciphertext[80];
+  uint8_t ciphertext[128];
 } user_eeconfig_t;
 user_eeconfig_t user_config;
 
