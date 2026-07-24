@@ -1,39 +1,58 @@
 #include "passwd.h"
 
-typedef enum { OFF, CAPTURE, REPLAY } passwd_state_t;
+#define PASSPHRASE_MAX 20
 
-typedef struct {
-  char letters[32];
-  uint8_t shift_bits[4];
-} passwd_slot_t;
+typedef enum { OFF, REPLAY } passwd_state_t;
 
-static passwd_slot_t buffer;
-static uint8_t buffer_letter_count = 0;
+static passwd_state_t state = OFF;
+static uint8_t passphrase[PASSPHRASE_MAX];
+static uint8_t passphrase_len = 0;
 
-bool process_passwd(uint16_t keycode, keyrecord_t *record, void *data) {
-  static passwd_state_t state = OFF;
+static void derive_key(const uint8_t *typed, uint8_t len, uint8_t *key) {
+  // TODO https://github.com/BareRose/lonesha256/blob/master/lonesha256.h
+  memset(key, 0, PASSWD_SLOT_SIZE);
+  memcpy(key, typed, len);
+}
 
+static void replay_password(uint8_t *cipher) {
+  uint8_t key[PASSWD_SLOT_SIZE];
+  derive_key(passphrase, passphrase_len, key);
+  for (uint8_t i = 0; i < PASSWD_SLOT_SIZE; i++) {
+    uint8_t code = cipher[i] ^ key[i];                                                                                                    
+    if (code == KC_NO) break;                                                                                                             
+    tap_code(code);
+  }
+}
+
+static void reset_passwd_state(void) {
+  state = OFF;
+  passphrase_len = 0;
+  memset(passphrase, 0, PASSPHRASE_MAX);
+}
+
+bool process_passwd(uint16_t keycode, keyrecord_t *record, uint8_t *cipher) {
   if (keycode == passwd_toggle_key) {
-    if (record->event.pressed) {
-      state = (state + 1) % 3;
+    if (!record->event.pressed) {
+      if (state == OFF) {
+        state = REPLAY;
+        passphrase_len = 0;
+      } else {
+        reset_passwd_state();
+      }
     }
     return false;
   }
 
-  switch (state) {
-    case OFF:
-      return true;
-    case CAPTURE:
-    case REPLAY:
-      if (record->event.pressed) {
-        if (keycode == KC_ESCAPE || keycode == KC_ENTER || buffer_letter_count >= sizeof(buffer.letters) - 1) {
-          buffer_letter_count = 0;
-          state = OFF;
-        } else {
-        }
-      }
-      return false;
+  if (state != REPLAY) return true;
+
+  if (record->event.pressed) {
+    if (keycode == KC_ENTER) {
+      replay_password(cipher);
+      reset_passwd_state();
+    } else if (passphrase_len < PASSPHRASE_MAX) {
+      passphrase[passphrase_len++] = keycode;
+    }
   }
 
-  return true;
+  return false;
 }

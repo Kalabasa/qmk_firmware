@@ -21,7 +21,7 @@
 extern keymap_config_t keymap_config;
 
 typedef struct {
-  uint8_t passwd[128];
+  uint8_t ciphertext[80];
 } user_eeconfig_t;
 user_eeconfig_t user_config;
 
@@ -109,7 +109,7 @@ bool process_detected_host_os_user(os_variant_t detected_os) {
 
 void eeconfig_init_user(void) {
   memset(&user_config, 0, sizeof(user_config));
-  eeconfig_update_user_datablock_field(user_config, passwd);
+  eeconfig_update_user_datablock_field(user_config, ciphertext);
 }
 
 bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
@@ -135,7 +135,7 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (layer_state_is(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
   if (layer_state_is(LAYER_KANA) && !process_kana(keycode, record)) return false;
-  if (!process_passwd(keycode, record, user_config.passwd)) {
+  if (!process_passwd(keycode, record, user_config.ciphertext)) {
     show_toast("Pass", 10);
     return false;
   }
