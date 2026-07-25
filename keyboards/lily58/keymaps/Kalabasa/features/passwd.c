@@ -25,9 +25,10 @@ static uint8_t derive_slot(const uint8_t *typed, uint8_t len) {
 
 static void replay_password(uint8_t *cipher) {
   uint8_t key[PASSWD_SLOT_SIZE];
+  uint8_t slot = derive_slot(passphrase, passphrase_len);
   derive_key(passphrase, passphrase_len, key);
   for (uint8_t i = 0; i < PASSWD_SLOT_SIZE; i++) {
-    uint8_t code = cipher[i] ^ key[i];                                                                                                    
+    uint8_t code = cipher[i + slot * PASSWD_SLOT_SIZE] ^ key[i];                                                                                                    
     if (code == KC_NO) break;                                                                                                             
     tap_code(code);
   }
