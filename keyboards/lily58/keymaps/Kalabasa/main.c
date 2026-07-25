@@ -1,6 +1,7 @@
 #include QMK_KEYBOARD_H
 #include "keycodes.h"
 #include "progmem.h"
+#include "raw_hid.h"
 #include "features/baybayin.h"
 #include "features/bitwise_f.h"
 #include "features/kana.h"
@@ -21,7 +22,8 @@
 extern keymap_config_t keymap_config;
 
 typedef struct {
-  uint8_t ciphertext[128];
+  uint8_t ciphertext[PASSWD_CIPHERTEXT_SIZE];
+  uint8_t salt[PASSWD_SALT_SIZE];
 } user_eeconfig_t;
 user_eeconfig_t user_config;
 
@@ -112,6 +114,38 @@ void eeconfig_init_user(void) {
   eeconfig_update_user_datablock_field(user_config, ciphertext);
 }
 
+void raw_hid_receive(uint8_t *data, uint8_t length) {
+  switch (data[0]) {
+    case 0: { // read eeprom
+      uint8_t report[length];
+      for (uint16_t offset = 0; offset < sizeof(user_config); offset += length) {
+        uint8_t chunk = MIN(length, sizeof(user_config) - offset);
+        memset(report, 0, length);
+        memcpy(report, (uint8_t*)&user_config + offset, chunk);
+        raw_hid_send(report, length);
+      }
+      break;
+    }
+    case 1: { // write ciphertext
+      uint8_t offset = data[1];
+      uint8_t write_length = data[2];
+      if (length < 3 || write_length > length - 3) return;
+      if (offset + write_length > sizeof(user_config.ciphertext)) return;
+      memcpy(user_config.ciphertext + offset, data + 3, write_length);
+      eeconfig_update_user_datablock(
+        user_config.ciphertext + offset,
+        offsetof(user_eeconfig_t, ciphertext) + offset,
+        write_length);
+      break;
+    }
+    case 2: // write salt
+      if (length < 1 + sizeof(user_config.salt)) return;
+      memcpy(user_config.salt, data + 1, sizeof(user_config.salt));
+      eeconfig_update_user_datablock_field(user_config, salt);
+      break;
+  }
+}
+
 bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
   static uint8_t f_key_result = 0;
   static char f_key_msg[] = "F  ";
@@ -133,9 +167,9 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (layer_state_is(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
+  // if (layer_state_is(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
   if (layer_state_is(LAYER_KANA) && !process_kana(keycode, record)) return false;
-  if (!process_passwd(keycode, record, user_config.ciphertext)) {
+  if (!process_passwd(keycode, record, user_config.ciphertext, user_config.salt)) {
     show_toast("Pass", 10);
     return false;
   }
