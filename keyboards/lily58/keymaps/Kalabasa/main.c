@@ -167,7 +167,7 @@ bool process_f_keys(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  // if (layer_state_is(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
+  if (layer_state_is(LAYER_BAYBAYIN) && !process_baybayin(keycode, record)) return false;
   if (layer_state_is(LAYER_KANA) && !process_kana(keycode, record)) return false;
   if (!process_passwd(keycode, record, user_config.ciphertext, user_config.salt)) {
     show_toast("Pass", 10);
